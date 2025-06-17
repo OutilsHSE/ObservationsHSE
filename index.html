@@ -280,6 +280,10 @@
       font-size: 14px;
     }
 
+    input {
+      min-height: 25px;
+    }
+
 
     @media (max-width: 600px) {
 
@@ -338,6 +342,10 @@
       max-width: 100px;
     }
 
+    select {
+      min-height: 25px;
+    }
+
     @media print {
 
       /* Cache les boutons et éléments non pertinents à l'impression */
@@ -374,7 +382,6 @@
 
       textarea.description {
         width: 100%;
-        height: 150px;
         overflow: visible;
         box-sizing: border-box;
         resize: none;
@@ -539,7 +546,7 @@
           <option value="CD">CD ⚠️</option>
           <option value="AD">AD 🚫</option>
         </select></td>
-        <td><textarea type="text" id="myTextarea" class="description" placeholder="Description"></textarea> <div class="print-description" id="printDescription"></div></td>
+        <td><textarea type="text" id="myTextarea" class="" placeholder="Description"></textarea> <div class="print-description" id="printDescription"></div></td>
         <td><input type="text" class="can-disable" placeholder="Action à mener"></td>
         <td><input type="text" class="can-disable"></td>
         <td><select class="can-disable"><option>À planifier</option><option>En cours</option><option>Clôturée</option></select></td>
