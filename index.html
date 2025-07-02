@@ -346,6 +346,19 @@
       min-height: 25px;
     }
 
+    
+      textarea {
+        width: 200px;
+        height: 100px;
+        overflow: visible;
+        box-sizing: border-box;
+        resize: none;
+        border: none;
+        line-height: 1.4;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+
     @media print {
 
       /* Cache les boutons et éléments non pertinents à l'impression */
@@ -380,22 +393,16 @@
         width: 50%;
       }
 
-      textarea.description {
+      textarea {
         width: 200px;
         height: 100px;
         overflow: visible;
         box-sizing: border-box;
         resize: none;
         border: none;
-        font-size: 14px;
         line-height: 1.4;
         white-space: pre-wrap;
         word-break: break-word;
-        max-width: 100px;
-      }
-
-      textarea.description {
-        display: none;
       }
 
       .print-description {
