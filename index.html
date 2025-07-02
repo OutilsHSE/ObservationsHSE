@@ -452,6 +452,11 @@
     <label>Activité:<input type="text" id="visiteur" placeholder="Nom"></label>
     <label>Conducteur de travaux:<input type="text" id="visiteur" placeholder="Nom / Fonction"></label>
   </div>
+  <div>
+
+    <input type="file" id="photo-input-chantier" accept="image/* .png" multiple>
+    <div id="photo-container-chantier"></div>
+  </div>
   <div class="counters">
     <span>PP 👍: <span id="count-PP">0</span></span>
     <span>PA 👍: <span id="count-PA">0</span></span>
@@ -473,26 +478,14 @@
     </thead>
     <tbody></tbody>
   </table>
-      <div class="buttons">
+  <div class="buttons">
     <button class="add-row" onclick="addRow()">Ajouter une observation</button>
   </div>
-  <table class="aligned-table">
-    <th>Bilan globale de la VMS</th>
-    <th>Commentaires des collaborateurs</th>
-    <tr>
-      <td>
-        <div class="large-row">
-          <textarea class="input-bilan" type="text"></textarea>
-        </div>
-      </td>
-      <td>
-        <div class="large-row">
-          <textarea class="input-bilan" type="text"></textarea>
-        </div>
-      </td>
-    </tr>
-  </table>
-    <div class="buttons">
+
+  <input type="file" id="photo-input" accept="image/* .png" multiple>
+  <div id="photo-container"></div>
+
+  <div class="buttons">
     <button class="export" onclick="print()">Imprimer</button>
     <button class="export" onclick="download()"> Exporter</button>
   </div>
@@ -690,6 +683,117 @@
       html2pdf().set(opt).from(element).save();
     }
 
+    const photoInput = document.getElementById('photo-input');
+    const photoContainer = document.getElementById('photo-container');
+
+    photoInput.addEventListener('change', function () {
+      // Vider l'affichage actuel
+      photoContainer.innerHTML = '';
+
+      Array.from(this.files).forEach((file, index) => {
+        const reader = new FileReader();
+
+        reader.onload = function (e) {
+          // Crée un conteneur pour chaque image + bouton
+          const imageWrapper = document.createElement('div');
+          imageWrapper.style.position = 'relative';
+          imageWrapper.style.display = 'inline-block';
+
+          // Image preview
+          const img = document.createElement('img');
+          img.src = e.target.result;
+          img.style.width = '120px';
+          img.style.height = 'auto';
+          img.style.border = '1px solid #ccc';
+          img.style.borderRadius = '8px';
+
+          // Bouton de suppression
+          const btn = document.createElement('button');
+          btn.textContent = '✕';
+          btn.style.position = 'absolute';
+          btn.style.top = '0';
+          btn.style.right = '0';
+          btn.style.background = 'rgba(0,0,0,0.6)';
+          btn.style.color = 'white';
+          btn.style.border = 'none';
+          btn.style.borderRadius = '0 8px 0 8px';
+          btn.style.cursor = 'pointer';
+
+          btn.addEventListener('click', () => {
+            imageWrapper.remove();
+          });
+
+
+          // Ajout au DOM
+          imageWrapper.appendChild(img);
+          imageWrapper.appendChild(btn);
+          photoContainer.appendChild(imageWrapper);
+        };
+      reader.readAsDataURL(file);
+    });
+     });
+    
+
+
+    const photoInputChantier = document.getElementById('photo-input-chantier');
+    const photoContainerChantier = document.getElementById('photo-container-chantier');
+
+    photoInputChantier.addEventListener('change', function () {
+      // Vider l'affichage actuel
+      photoContainerChantier.innerHTML = '';
+
+      Array.from(this.files).forEach((file, index) => {
+        const reader = new FileReader();
+
+        reader.onload = function (e) {
+          // Crée un conteneur pour chaque image + bouton
+          const imageWrapper = document.createElement('div');
+          imageWrapper.style.position = 'relative';
+          imageWrapper.style.display = 'inline-block';
+
+          // Image preview
+          const img = document.createElement('img');
+          img.src = e.target.result;
+          img.style.width = '120px';
+          img.style.height = 'auto';
+          img.style.border = '1px solid #ccc';
+          img.style.borderRadius = '8px';
+
+          // Bouton de suppression
+          const btn = document.createElement('button');
+          btn.textContent = '✕';
+          btn.style.position = 'absolute';
+          btn.style.top = '0';
+          btn.style.right = '0';
+          btn.style.background = 'rgba(0,0,0,0.6)';
+          btn.style.color = 'white';
+          btn.style.border = 'none';
+          btn.style.borderRadius = '0 8px 0 8px';
+          btn.style.cursor = 'pointer';
+
+          btn.addEventListener('click', () => {
+            imageWrapper.remove();
+          });
+
+          // Zone de commentaire
+          const textarea = document.createElement('textarea');
+          textarea.placeholder = 'Ajouter un commentaire...';
+          textarea.style.width = '120px';
+          textarea.style.marginTop = '5px';
+          textarea.style.borderRadius = '4px';
+          textarea.style.resize = 'none';
+          textarea.rows = 2;
+
+          // Ajout au DOM
+          imageWrapper.appendChild(img);
+          imageWrapper.appendChild(btn);
+          imageWrapper.appendChild(textarea);
+          photoContainerChantier.appendChild(imageWrapper);
+        };
+
+        reader.readAsDataURL(file);
+      });
+    });
   </script>
 </body>
 
