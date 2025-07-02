@@ -61,6 +61,7 @@
       }
     }
 
+
     table {
       width: 100%;
       border-collapse: collapse;
@@ -74,6 +75,12 @@
       text-align: center;
     }
 
+    td, th {
+      word-wrap: break-word;   /* forcer le retour à la ligne dans une cellule */
+      white-space: normal;     /* permettre le retour à la ligne */
+      overflow-wrap: break-word;
+      padding: 8px;
+    }
 
     th {
       background: #f0f0f0;
@@ -284,31 +291,8 @@
       min-height: 25px;
     }
 
-
-    @media (max-width: 600px) {
-
-      .aligned-table th,
-      .aligned-table td {
-        display: block;
-        width: 100%;
-        box-sizing: border-box;
-      }
-
-      .aligned-table tr {
-        display: flex;
-        flex-direction: column;
-      }
-
-      .aligned-table th {
-        background-color: #f0f0f0;
-        /* Exemple de couleur de fond pour les en-têtes */
-        font-weight: bold;
-      }
-    }
-
     .large-row {
-      min-height: 50px;
-      display: flex;
+      min-height: 200px;
       align-items: center;
     }
 
@@ -336,24 +320,35 @@
       min-height: 25px;
     }
 
+
+    textarea {
+      width: 400px;
+      height: 100px;
+    }
+
     
-      textarea {
-        width: 400px;
-        height: 100px;
-        overflow: visible;
-        box-sizing: border-box;
-        resize: none;
-        border: none;
-        line-height: 1.4;
-        white-space: pre-wrap;
-        word-break: break-word;
-      }
+    .large-row { width: 200px; }
+    .medium-row { width: 100px; }
+    .small-row { width: 40px; }
+
+    .no-print {
+      display: table-cell;
+    }
+
 
     @media print {
 
-        @page {
-    size: landscape;
-  }
+      * {
+        -webkit-print-color-adjust: exact;
+        /* Chrome, Safari */
+        print-color-adjust: exact;
+        /* Standard */
+      }
+
+      @page {
+        size: landscape;
+      }
+
       /* Cache les boutons et éléments non pertinents à l'impression */
       button,
       .no-print {
@@ -371,6 +366,15 @@
         /* Ajuster la taille des images selon vos besoins */
         height: auto;
         /* Maintenir les proportions des images */
+      }
+
+      table {
+        width: 100%;
+        table-layout: fixed;
+      }
+      textarea {
+        max-width: 200px;
+        font-size: 10pt;
       }
     }
   </style>
@@ -403,16 +407,18 @@
   <table id="obs-table">
     <thead>
       <tr>
-        <th>Type</th>
-        <th>Description</th>
-        <th>Action</th>
-        <th>Échéance</th>
-        <th>Statut</th>
-        <th>PA</th>
-        <th>Suppr.</th>
+        <th class="medium-row">Type</th>
+        <th class="large-row">Description</th>
+        <th class="large-row">Action</th>
+        <th class="medium-row">Échéance</th>
+        <th class="medium-row">Statut</th>
+        <th class="small-row">PA</th>
+        <th class="small-row no-print">Suppr.</th>
       </tr>
     </thead>
-    <tbody></tbody>
+    <tbody>
+      <!-- Lignes dynamiques ici -->
+    </tbody>
   </table>
   <div class="buttons">
     <button class="add-row" onclick="addRow()">Ajouter une observation</button>
@@ -469,26 +475,40 @@
       const tbody = document.querySelector('#obs-table tbody');
       const tr = document.createElement('tr');
       tr.innerHTML = `
-        <td><select class="type-select" id="mySelect" onchange="applyColor(this); updateCounters(); sortTableByType()">
-          <option value="PP">PP 👍</option>
-          <option value="PA">PA 👍</option>
-          <option value="CD">CD ⚠️</option>
-          <option value="AD">AD 🚫</option>
-        </select></td>
-        <td><textarea type="text" id="myTextarea" class="" placeholder="Description"></textarea> <div class="print-description" id="printDescription"></div></td>
-        <td><textarea type="text" class="can-disable"></textarea></td>
-        <td><input type="text" class="can-disable"></td>
-        <td><select class="can-disable"><option>À planifier</option><option>En cours</option><option>Clôturée</option></select></td>
-        <td><input type="checkbox" class="can-disable" ></td>
-        <td><button class="remove-row" onclick="removeRow(this)">✖</button></td>
+        <td class="medium-row">
+          <select class="type-select" onchange="applyColor(this); updateCounters(); sortTableByType()">
+            <option value="PP">PP 👍</option>
+            <option value="PA">PA 👍</option>
+            <option value="CD">CD ⚠️</option>
+            <option value="AD">AD 🚫</option>
+          </select>
+        </td>
+        <td class="large-row">
+          <textarea class="description"></textarea>
+        </td>
+        <td class="large-row">
+          <textarea class="can-disable"></textarea>
+        </td>
+        <td class="medium-row">
+          <input type="text" class="can-disable">
+        </td>
+        <td class="medium-row">
+          <select class="can-disable">
+            <option>À planifier</option>
+            <option>En cours</option>
+            <option>Clôturée</option>
+          </select>
+        </td>
+        <td class="small-row">
+          <input type="checkbox" class="can-disable">
+        </td>
+        <td class="small-row no-print">
+          <button class="remove-row" onclick="removeRow(this)">✖</button>
+        </td>
       `;
       tbody.appendChild(tr);
       applyColor(tr.querySelector('.type-select'));
       updateCounters();
-      // 🔄 Initialise la zone de texte dynamique juste après l'ajout
-      const textarea = tr.querySelector('textarea.description');
-      const printDiv = tr.querySelector('div.print-description');
-
       function autoResizeAndSync() {
         textarea.style.height = 'auto';
         textarea.style.height = textarea.scrollHeight + 'px';
@@ -598,16 +618,6 @@
       const buttons = element.querySelectorAll('button, .no-print');
       buttons.forEach(btn => btn.remove());
 
-      // Forcer les textareas à afficher leur texte dans une div (comme en mode print)
-      const textareas = element.querySelectorAll('textarea.description');
-      textareas.forEach(textarea => {
-        const div = document.createElement('div');
-        div.className = 'print-description';
-        div.textContent = textarea.value;
-        textarea.parentNode.insertBefore(div, textarea);
-        textarea.remove();
-      });
-
       const opt = {
         margin: 0.5,
         filename: 'VMS_Observations.pdf',
@@ -619,7 +629,7 @@
       html2pdf().set(opt).from(element).save();
     }
 
-      const photoInputChantier = document.getElementById('photo-input-chantier');
+    const photoInputChantier = document.getElementById('photo-input-chantier');
     const photoContainerChantier = document.getElementById('photo-container-chantier');
 
     photoInputChantier.addEventListener('change', function () {
