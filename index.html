@@ -332,16 +332,6 @@
       height: 50px;
     }
 
-    .print-description {
-      display: none;
-      white-space: pre-wrap;
-      word-break: break-word;
-      font-size: 14px;
-      border: none;
-      padding: 4px;
-      max-width: 100px;
-    }
-
     select {
       min-height: 25px;
     }
@@ -361,6 +351,9 @@
 
     @media print {
 
+        @page {
+    size: landscape;
+  }
       /* Cache les boutons et éléments non pertinents à l'impression */
       button,
       .no-print {
@@ -373,62 +366,12 @@
         padding: 0;
       }
 
-      /* Forcer les canvas à s'afficher correctement */
-      canvas {
-        border: 1px solid #000 !important;
-        display: block;
-        page-break-inside: avoid;
+      .regles {
+        max-width: 300px;
+        /* Ajuster la taille des images selon vos besoins */
+        height: auto;
+        /* Maintenir les proportions des images */
       }
-
-      /* Évite que les tableaux soient coupés entre deux pages */
-      table {
-        page-break-inside: avoid;
-        break-inside: avoid;
-        table-layout: fixed;
-      }
-
-      /* Fixer les largeurs des colonnes si nécessaire */
-      th,
-      td {
-        width: 50%;
-      }
-
-      textarea {
-        width: 200px;
-        height: 100px;
-        overflow: visible;
-        box-sizing: border-box;
-        resize: none;
-        border: none;
-        line-height: 1.4;
-        white-space: pre-wrap;
-        word-break: break-word;
-      }
-
-      .print-description {
-        display: block;
-      }
-
-      tr {
-        page-break-inside: avoid;
-      }
-
-      td,
-      th {
-        vertical-align: top;
-      }
-
-      /* Agrandir les zones de texte pour qu'elles ne soient pas tronquées */
-      textarea {
-        border: none;
-        resize: none;
-        overflow: visible;
-      }
-
-      .input-bilan {
-        height: 200px;
-      }
-
     }
   </style>
 </head>
@@ -676,6 +619,65 @@
       html2pdf().set(opt).from(element).save();
     }
 
+      const photoInputChantier = document.getElementById('photo-input-chantier');
+    const photoContainerChantier = document.getElementById('photo-container-chantier');
+
+    photoInputChantier.addEventListener('change', function () {
+      // Vider l'affichage actuel
+      photoContainerChantier.innerHTML = '';
+
+      Array.from(this.files).forEach((file, index) => {
+        const reader = new FileReader();
+
+        reader.onload = function (e) {
+          // Crée un conteneur pour chaque image + bouton
+          const imageWrapper = document.createElement('div');
+          imageWrapper.style.position = 'relative';
+          imageWrapper.style.display = 'inline-block';
+
+          // Image preview
+          const img = document.createElement('img');
+          img.src = e.target.result;
+          img.style.width = '120px';
+          img.style.height = 'auto';
+          img.style.border = '1px solid #ccc';
+          img.style.borderRadius = '8px';
+
+          // Bouton de suppression
+          const btn = document.createElement('button');
+          btn.textContent = '✕';
+          btn.style.position = 'absolute';
+          btn.style.top = '0';
+          btn.style.right = '0';
+          btn.style.background = 'rgba(0,0,0,0.6)';
+          btn.style.color = 'white';
+          btn.style.border = 'none';
+          btn.style.borderRadius = '0 8px 0 8px';
+          btn.style.cursor = 'pointer';
+
+          btn.addEventListener('click', () => {
+            imageWrapper.remove();
+          });
+
+          // Zone de commentaire
+          const textarea = document.createElement('textarea');
+          textarea.placeholder = 'Ajouter un commentaire...';
+          textarea.style.width = '120px';
+          textarea.style.marginTop = '5px';
+          textarea.style.borderRadius = '4px';
+          textarea.style.resize = 'none';
+          textarea.rows = 2;
+
+          // Ajout au DOM
+          imageWrapper.appendChild(img);
+          imageWrapper.appendChild(btn);
+          imageWrapper.appendChild(textarea);
+          photoContainerChantier.appendChild(imageWrapper);
+        };
+        reader.readAsDataURL(file);
+      });
+    });
+
     const photoInput = document.getElementById('photo-input');
     const photoContainer = document.getElementById('photo-container');
 
@@ -737,55 +739,7 @@
 
 
 
-    const photoInputChantier = document.getElementById('photo-input-chantier');
-    const photoContainerChantier = document.getElementById('photo-container-chantier');
 
-    photoInputChantier.addEventListener('change', function () {
-      // Vider l'affichage actuel
-      photoContainerChantier.innerHTML = '';
-
-      Array.from(this.files).forEach((file, index) => {
-        const reader = new FileReader();
-
-        reader.onload = function (e) {
-          // Crée un conteneur pour chaque image + bouton
-          const imageWrapper = document.createElement('div');
-          imageWrapper.style.position = 'relative';
-          imageWrapper.style.display = 'inline-block';
-
-          // Image preview
-          const img = document.createElement('img');
-          img.src = e.target.result;
-          img.style.width = '120px';
-          img.style.height = 'auto';
-          img.style.border = '1px solid #ccc';
-          img.style.borderRadius = '8px';
-
-          // Bouton de suppression
-          const btn = document.createElement('button');
-          btn.textContent = '✕';
-          btn.style.position = 'absolute';
-          btn.style.top = '0';
-          btn.style.right = '0';
-          btn.style.background = 'rgba(0,0,0,0.6)';
-          btn.style.color = 'white';
-          btn.style.border = 'none';
-          btn.style.borderRadius = '0 8px 0 8px';
-          btn.style.cursor = 'pointer';
-
-          btn.addEventListener('click', () => {
-            imageWrapper.remove();
-          });
-
-          // Ajout au DOM
-          imageWrapper.appendChild(img);
-          imageWrapper.appendChild(btn);
-          photoContainerChantier.appendChild(imageWrapper);
-        };
-
-        reader.readAsDataURL(file);
-      });
-    });
   </script>
 </body>
 
