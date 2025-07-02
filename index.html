@@ -723,16 +723,25 @@
             imageWrapper.remove();
           });
 
+          // Zone de commentaire
+          const textarea = document.createElement('textarea');
+          textarea.placeholder = 'Ajouter un commentaire...';
+          textarea.style.width = '120px';
+          textarea.style.marginTop = '5px';
+          textarea.style.borderRadius = '4px';
+          textarea.style.resize = 'none';
+          textarea.rows = 2;
 
           // Ajout au DOM
           imageWrapper.appendChild(img);
           imageWrapper.appendChild(btn);
+          imageWrapper.appendChild(textarea);
           photoContainer.appendChild(imageWrapper);
         };
-      reader.readAsDataURL(file);
+        reader.readAsDataURL(file);
+      });
     });
-     });
-    
+
 
 
     const photoInputChantier = document.getElementById('photo-input-chantier');
@@ -775,20 +784,10 @@
             imageWrapper.remove();
           });
 
-          // Zone de commentaire
-          const textarea = document.createElement('textarea');
-          textarea.placeholder = 'Ajouter un commentaire...';
-          textarea.style.width = '120px';
-          textarea.style.marginTop = '5px';
-          textarea.style.borderRadius = '4px';
-          textarea.style.resize = 'none';
-          textarea.rows = 2;
-
           // Ajout au DOM
           imageWrapper.appendChild(img);
           imageWrapper.appendChild(btn);
-          imageWrapper.appendChild(textarea);
-          photoContainer.appendChild(imageWrapper);
+          photoInputChantier.appendChild(imageWrapper);
         };
 
         reader.readAsDataURL(file);
