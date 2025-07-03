@@ -75,9 +75,12 @@
       text-align: center;
     }
 
-    td, th {
-      word-wrap: break-word;   /* forcer le retour à la ligne dans une cellule */
-      white-space: normal;     /* permettre le retour à la ligne */
+    td,
+    th {
+      word-wrap: break-word;
+      /* forcer le retour à la ligne dans une cellule */
+      white-space: normal;
+      /* permettre le retour à la ligne */
       overflow-wrap: break-word;
       padding: 8px;
     }
@@ -326,17 +329,25 @@
       height: 250px;
     }
 
-    
-    .large-row { width: 200px; }
-    .medium-row { width: 100px; }
-    .small-row { width: 40px; }
+
+    .large-row {
+      width: 200px;
+    }
+
+    .medium-row {
+      width: 100px;
+    }
+
+    .small-row {
+      width: 40px;
+    }
 
     .no-print {
       display: table-cell;
     }
 
     .activite {
-       width: 300px;
+      width: 300px;
     }
 
 
@@ -376,6 +387,7 @@
         width: 100%;
         table-layout: fixed;
       }
+
       textarea {
         max-width: 200px;
         font-size: 10pt;
@@ -452,7 +464,8 @@
         <li style="color:green ;">PP : Point Positif</li>
         <li style="color: blue ;">PA : Point d'amélioration</li>
         <li style="color:red ;">AD : Acte Dangereux : téléphoner en conduisant, opération de travail sans EPI </li>
-        <li style="color:orange;">CD : Condition dangereuse : une consigne pas à jour, des trous dans le sol, absence de balisage </li>
+        <li style="color:orange;">CD : Condition dangereuse : une consigne pas à jour, des trous dans le sol, absence de
+          balisage </li>
       </ul>
       <span class="close">&times;</span>
     </div>
@@ -632,7 +645,7 @@
           // Image preview
           const img = document.createElement('img');
           img.src = e.target.result;
-          img.style.width = '240px';
+          img.style.width = '300px';
           img.style.height = 'auto';
           img.style.border = '1px solid #ccc';
           img.style.borderRadius = '8px';
@@ -665,57 +678,70 @@
     const photoInput = document.getElementById('photo-input');
     const photoContainer = document.getElementById('photo-container');
 
-    photoInput.addEventListener('change', function () {
+// Met à jour les numéros de chaque photo
+function updatePhotoLabels() {
+  const wrappers = photoContainer.querySelectorAll('.photo-wrapper');
+  wrappers.forEach((wrapper, i) => {
+    const label = wrapper.querySelector('label');
+    if (label) {
+      label.textContent = 'Photo ' + (i + 1);
+    }
+  });
+}
 
-      Array.from(this.files).forEach((file, index) => {
-        const reader = new FileReader();
+photoInput.addEventListener('change', function () {
+  Array.from(this.files).forEach((file) => {
+    const reader = new FileReader();
 
-        reader.onload = function (e) {
-          // Crée un conteneur pour chaque image + bouton
-          const imageWrapper = document.createElement('div');
-          imageWrapper.style.position = 'relative';
-          imageWrapper.style.display = 'inline-block';
+    reader.onload = function (e) {
+      const imageWrapper = document.createElement('div');
+      imageWrapper.classList.add('photo-wrapper'); // ← important !
+      imageWrapper.style.position = 'relative';
+      imageWrapper.style.display = 'inline-block';
+      imageWrapper.style.margin = '10px';
 
-          // Image preview
-          const img = document.createElement('img');
-          img.src = e.target.result;
-          img.style.width = '240px';
-          img.style.height = 'auto';
-          img.style.border = '1px solid #ccc';
-          img.style.borderRadius = '8px';
+      const img = document.createElement('img');
+      img.src = e.target.result;
+      img.style.width = '300px';
+      img.style.height = 'auto';
+      img.style.border = '1px solid #ccc';
+      img.style.borderRadius = '8px';
 
-          // Bouton de suppression
-          const btn = document.createElement('button');
-          btn.textContent = '✕';
-          btn.style.position = 'absolute';
-          btn.style.top = '0';
-          btn.style.right = '0';
-          btn.style.background = 'rgba(0,0,0,0.6)';
-          btn.style.color = 'white';
-          btn.style.border = 'none';
-          btn.style.borderRadius = '0 8px 0 8px';
-          btn.style.cursor = 'pointer';
+      const btn = document.createElement('button');
+      btn.textContent = '✕';
+      btn.style.position = 'absolute';
+      btn.style.top = '0';
+      btn.style.right = '0';
+      btn.style.background = 'rgba(0,0,0,0.6)';
+      btn.style.color = 'white';
+      btn.style.border = 'none';
+      btn.style.borderRadius = '0 8px 0 8px';
+      btn.style.cursor = 'pointer';
 
-          btn.addEventListener('click', () => {
-            imageWrapper.remove();
-          });
-
-          // Zone de commentaire
-          const  label = document.createElement('label');
-          label.textContent = 'Photo ' + (index+1);
-          label.style.width = '120px';
-          label.style.marginTop = '5px';
-          label.style.borderRadius = '4px';
-          label.style.resize = 'none';
-
-          // Ajout au DOM
-          imageWrapper.appendChild(img);
-          imageWrapper.appendChild(btn);
-          imageWrapper.appendChild(label);
-          photoContainer.appendChild(imageWrapper);
-        };
-        reader.readAsDataURL(file);
+      btn.addEventListener('click', () => {
+        imageWrapper.remove();
+        updatePhotoLabels(); // Mise à jour après suppression
       });
+
+      const label = document.createElement('label');
+      label.textContent = 'Photo '; // sera mis à jour juste après
+      label.style.display = 'block'; // ← indispensable
+      label.style.marginTop = '5px';
+      label.style.fontWeight = 'bold';
+
+      imageWrapper.appendChild(img);
+      imageWrapper.appendChild(btn);
+      imageWrapper.appendChild(label);
+      photoContainer.appendChild(imageWrapper);
+
+      updatePhotoLabels(); // Mise à jour après ajout
+    };
+
+    reader.readAsDataURL(file);
+  });
+
+  this.value = ''; // pour permettre un nouveau chargement des mêmes fichiers
+
     });
 
 
