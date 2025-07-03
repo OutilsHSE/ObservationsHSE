@@ -619,8 +619,6 @@
     const photoContainerChantier = document.getElementById('photo-container-chantier');
 
     photoInputChantier.addEventListener('change', function () {
-      // Vider l'affichage actuel
-      photoContainerChantier.innerHTML = '';
 
       Array.from(this.files).forEach((file, index) => {
         const reader = new FileReader();
@@ -634,7 +632,7 @@
           // Image preview
           const img = document.createElement('img');
           img.src = e.target.result;
-          img.style.width = '120px';
+          img.style.width = '240px';
           img.style.height = 'auto';
           img.style.border = '1px solid #ccc';
           img.style.borderRadius = '8px';
@@ -668,8 +666,6 @@
     const photoContainer = document.getElementById('photo-container');
 
     photoInput.addEventListener('change', function () {
-      // Vider l'affichage actuel
-      photoContainer.innerHTML = '';
 
       Array.from(this.files).forEach((file, index) => {
         const reader = new FileReader();
@@ -683,7 +679,7 @@
           // Image preview
           const img = document.createElement('img');
           img.src = e.target.result;
-          img.style.width = '120px';
+          img.style.width = '240px';
           img.style.height = 'auto';
           img.style.border = '1px solid #ccc';
           img.style.borderRadius = '8px';
