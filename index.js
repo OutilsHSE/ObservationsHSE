@@ -17,6 +17,7 @@
     function addRow() {
       const tbody = document.querySelector('#obs-table tbody');
       const tr = document.createElement('tr');
+      tr.setAttribute("draggable","true");
       tr.innerHTML = `
         <td class="medium-row">
           <select class="type-select" onchange="applyColor(this); updateCounters(); sortTableByType()">
@@ -279,3 +280,51 @@ photoInput.addEventListener('change', function () {
   this.value = ''; // pour permettre un nouveau chargement des mêmes fichiers
 
     });
+
+// --- DRAG & DROP DES LIGNES DU TABLEAU --- //
+const tbodyObs = document.querySelector("#obs-table tbody");
+
+let draggingRow = null;
+
+tbodyObs.addEventListener("dragstart", (e) => {
+  const tr = e.target.closest("tr");
+  if (!tr) return;
+  draggingRow = tr;
+  tr.classList.add("dragging");
+});
+
+tbodyObs.addEventListener("dragend", () => {
+  if (draggingRow) draggingRow.classList.remove("dragging");
+  draggingRow = null;
+  updateCounters(); // Mise à jour compteur après déplacement
+});
+
+tbodyObs.addEventListener("dragover", (e) => {
+  e.preventDefault();
+
+  const y = e.clientY;
+  const after = getDragAfterElement(tbodyObs, y);
+
+  if (after == null) {
+    tbodyObs.appendChild(draggingRow);
+  } else {
+    tbodyObs.insertBefore(draggingRow, after);
+  }
+});
+
+function getDragAfterElement(container, y) {
+  const rows = [...container.querySelectorAll("tr:not(.dragging)")];
+
+  return rows.reduce(
+    (closest, row) => {
+      const box = row.getBoundingClientRect();
+      const offset = y - (box.top + box.height / 2);
+
+      if (offset < 0 && offset > closest.offset) {
+        return { offset, element: row };
+      }
+      return closest;
+    },
+    { offset: Number.NEGATIVE_INFINITY }
+  ).element;
+}
