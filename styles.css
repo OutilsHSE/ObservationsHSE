@@ -311,7 +311,7 @@ select {
 
 textarea {
     width: 400px;
-    height: 450px;
+    height: 250px;
 }
 
 
@@ -353,9 +353,16 @@ textarea {
         print-color-adjust: exact;
         /* Standard */
     }
+    body {
+        transform: scale(0.85);   /* réduit toute la page */
+        transform-origin: top left;
+        width: 297mm;
+    }
 
+    /* Important : empêcher les marges automatiques */
     @page {
-        size: landscape;
+        size: A4 landscape;
+        margin: 5mm; /* ajuste si besoin */
     }
 
     /* Cache les boutons et éléments non pertinents à l'impression */
@@ -386,4 +393,5 @@ textarea {
         max-width: 200px;
         font-size: 10pt;
     }
+
 }
