@@ -32,6 +32,11 @@
     <span>CD ⚠️: <span id="count-CD">0</span></span>
     <span>AD 🚫: <span id="count-AD">0</span></span>
     <button class="show-consignes" id="openModalBtn">?</button>
+<img 
+    src="fho.png"
+    id="openModalFhoBtn"
+    class="btn-image"
+    alt="Ouvrir FHO">
   </div>
   <table id="obs-table">
     <thead>
@@ -82,8 +87,9 @@
       <span class="close">&times;</span>
     </div>
   </div>
-
-<table class="attestation no-print">
+    <div id="imageFhoModal" class="modal-fho">
+    <div class="modal-content-fho">
+      <table class="attestation no-print">
   <tbody>
     <tr>
       <td>
@@ -115,6 +121,11 @@
     </tr>
   </tbody>
 </table>
+      <span class="close-fho">&times;</span>
+    </div>
+  </div>
+
+
 
   <script src="index.js"> </script>
 </body>

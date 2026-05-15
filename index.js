@@ -122,10 +122,20 @@
       const modalImg = document.getElementById('modalImage');
       modal.style.display = 'block';
     }
+    
+    function openModalFho(imageUrl) {
+      const modal = document.getElementById('imageFhoModal');
+      modal.style.display = 'block';
+    }
 
     // Fonction pour fermer la modale
     function closeModal() {
       const modal = document.getElementById('imageModal');
+      modal.style.display = 'none';
+    }
+        // Fonction pour fermer la modale
+    function closeFhoModal() {
+      const modal = document.getElementById('imageFhoModal');
       modal.style.display = 'none';
     }
 
@@ -133,17 +143,29 @@
     document.getElementById('openModalBtn').onclick = function () {
       openModal('regles.png');
     };
+    
+    document.getElementById('openModalFhoBtn').onclick = function () {
+      openModalFho();
+    };
 
     // Écouteur d'événement pour le bouton de fermeture
     document.getElementsByClassName('close')[0].onclick = function () {
       closeModal();
     };
 
+        document.getElementsByClassName('close-fho')[0].onclick = function () {
+      closeFhoModal();
+    };
+
     // Fermer la modale si l'utilisateur clique en dehors de l'image
     window.onclick = function (event) {
       const modal = document.getElementById('imageModal');
+      const fhoModal = document.getElementById('imageFhoModal');
       if (event.target == modal) {
         closeModal();
+      }
+            if (event.target == fhoModal) {
+        closeFhoModal();
       }
     };
 
