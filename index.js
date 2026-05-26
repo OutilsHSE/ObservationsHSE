@@ -1,332 +1,551 @@
+// =============================================
+// OBSERVATIONS HSE — index.js (version améliorée)
+// =============================================
 
-    function updateCounters() {
-      const rows = document.querySelectorAll('#obs-table tbody tr');
-      let cPP = 0, cPA = 0, cCD = 0, cAD = 0;
-      rows.forEach(r => {
-        const type = r.querySelector('.type-select').value;
-        if (type === 'PP') cPP++;
-        if (type === 'PA') cPP++;
-        if (type === 'CD') cCD++;
-        if (type === 'AD') cAD++;
-      });
-      document.getElementById('count-PP').textContent = cPP;
-      document.getElementById('count-PA').textContent = cPA;
-      document.getElementById('count-CD').textContent = cCD;
-      document.getElementById('count-AD').textContent = cAD;
-    }
-    function addRow() {
-      const tbody = document.querySelector('#obs-table tbody');
-      const tr = document.createElement('tr');
-      tr.setAttribute("draggable","true");
-      tr.innerHTML = `
-        <td class="medium-row">
-          <select class="type-select" onchange="applyColor(this); updateCounters(); sortTableByType()">
-            <option value="PP">PP 👍</option>
-            <option value="PA">PA 👍</option>
-            <option value="CD">CD ⚠️</option>
-            <option value="AD">AD 🚫</option>
-          </select>
-        </td>
-        <td class="large-row">
-          <textarea class="description"></textarea>
-        </td>
-        <td class="large-row">
-          <textarea class="can-disable"></textarea>
-        </td>
-        <td class="medium-row">
-          <input type="text" class="can-disable">
-        </td>
-        <td class="medium-row">
-          <select class="can-disable">
-            <option>À planifier</option>
-            <option>En cours</option>
-            <option>Clôturée</option>
-          </select>
-        </td>
-        <td class="small-row no-print">
-          <button class="remove-row" onclick="removeRow(this)">✖</button>
-        </td>
-      `;
-      tbody.appendChild(tr);
-      applyColor(tr.querySelector('.type-select'));
-      updateCounters();
-      function autoResizeAndSync() {
-        textarea.style.height = 'auto';
-        textarea.style.height = textarea.scrollHeight + 'px';
-        printDiv.textContent = textarea.value;
-      }
+// --- COMPTEURS (bug PA corrigé) ---
+function updateCounters() {
+  const rows = document.querySelectorAll('#obs-table tbody tr');
+  let cPP = 0, cPA = 0, cCD = 0, cAD = 0;
+  rows.forEach(r => {
+    const type = r.querySelector('.type-select').value;
+    if (type === 'PP') cPP++;
+    if (type === 'PA') cPA++;
+    if (type === 'CD') cCD++;
+    if (type === 'AD') cAD++;
+  });
+  document.getElementById('count-PP').textContent = cPP;
+  document.getElementById('count-PA').textContent = cPA;
+  document.getElementById('count-CD').textContent = cCD;
+  document.getElementById('count-AD').textContent = cAD;
+}
 
-      textarea.addEventListener('input', autoResizeAndSync);
-      autoResizeAndSync(); // appel initial si valeur présente
-      sortTableByType();
-    }
-    function removeRow(btn) {
-      btn.closest('tr').remove();
-      updateCounters();
-    }
-    function toggleInputs(selectElement) {
-      const tr = selectElement.closest('tr');
-      const inputs = tr.querySelectorAll('.can-disable');
-      if (selectElement.value === 'PP') {
-        inputs.forEach(input => input.setAttribute('disabled', 'disabled'));
-      } else {
-        inputs.forEach(input => input.removeAttribute('disabled'));
-      }
-    }
-    document.addEventListener('DOMContentLoaded', function () {
-      const selectElement = document.getElementById('mySelect');
-      if (selectElement) {
-        selectElement.addEventListener('change', function () {
-          toggleInputs(this);
-        });
+// --- AJOUT DE LIGNE ---
+function addRow() {
+  const tbody = document.querySelector('#obs-table tbody');
+  const tr = document.createElement('tr');
+  tr.setAttribute('draggable', 'true');
+  tr.innerHTML = `
+    <td class="medium-row">
+      <select class="type-select" onchange="applyColor(this); updateCounters(); sortTableByType()">
+        <option value="PP">PP 👍</option>
+        <option value="PA">PA 👍</option>
+        <option value="CD">CD ⚠️</option>
+        <option value="AD">AD 🚫</option>
+      </select>
+    </td>
+    <td class="large-row">
+      <textarea class="description" oninput="autoResize(this)"></textarea>
+    </td>
+    <td class="large-row">
+      <textarea class="can-disable action-text" oninput="autoResize(this)"></textarea>
+    </td>
+    <td class="medium-row">
+      <input type="text" class="can-disable echeance-input" placeholder="JJ/MM/AAAA">
+    </td>
+    <td class="medium-row">
+      <select class="can-disable statut-select">
+        <option>À planifier</option>
+        <option>En cours</option>
+        <option>Clôturée</option>
+      </select>
+    </td>
+    <td class="small-row no-print">
+      <button class="remove-row" onclick="removeRow(this)">✖</button>
+    </td>
+  `;
+  tbody.appendChild(tr);
+  applyColor(tr.querySelector('.type-select'));
+  updateCounters();
+  sortTableByType();
+}
 
-        // Appel initial pour définir l'état des inputs en fonction de la valeur par défaut
-        toggleInputs(selectElement);
-      }
-    });
+// --- AUTO RESIZE TEXTAREA ---
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = el.scrollHeight + 'px';
+}
 
-    function sortTableByType() {
-      const tbody = document.querySelector('#obs-table tbody');
-      const rows = Array.from(tbody.querySelectorAll('tr'));
+// --- SUPPRESSION DE LIGNE ---
+function removeRow(btn) {
+  btn.closest('tr').remove();
+  updateCounters();
+}
 
-      rows.sort((a, b) => {
-        const typeA = a.querySelector('.type-select').value;
-        const typeB = b.querySelector('.type-select').value;
-        return typeA.localeCompare(typeB);
-      });
+// --- ACTIVER/DÉSACTIVER CHAMPS SELON TYPE ---
+function toggleInputs(selectElement) {
+  const tr = selectElement.closest('tr');
+  const inputs = tr.querySelectorAll('.can-disable');
+  if (selectElement.value === 'PP') {
+    inputs.forEach(input => input.setAttribute('disabled', 'disabled'));
+  } else {
+    inputs.forEach(input => input.removeAttribute('disabled'));
+  }
+}
 
-      // Réinsérer les lignes triées dans le tbody
-      rows.forEach(row => tbody.appendChild(row));
-    }
+// --- TRI PAR TYPE ---
+function sortTableByType() {
+  const tbody = document.querySelector('#obs-table tbody');
+  const rows = Array.from(tbody.querySelectorAll('tr'));
+  const order = { 'PP': 0, 'PA': 1, 'CD': 2, 'AD': 3 };
+  rows.sort((a, b) => {
+    const typeA = a.querySelector('.type-select').value;
+    const typeB = b.querySelector('.type-select').value;
+    return (order[typeA] || 0) - (order[typeB] || 0);
+  });
+  rows.forEach(row => tbody.appendChild(row));
+}
 
-    function applyColor(selectElement) {
-      const tr = selectElement.closest('tr');
-      if (selectElement.value === 'PP') {
-        tr.style.backgroundColor = '#d4edda'; // Couleur pour PP
-      } else if (selectElement.value === 'CD') {
-        tr.style.backgroundColor = '#fff3cd'; // Couleur pour CD
-      } else if (selectElement.value === 'AD') {
-        tr.style.backgroundColor = '#f8d7da'; // Couleur pour AD
-      } else if (selectElement.value === 'PA') {
-        tr.style.backgroundColor = '#81bcec'; // Couleur pour AD  
-      } else {
-        tr.style.backgroundColor = ''; // Réinitialiser la couleur
-      }
-      toggleInputs(tr.querySelector('.type-select'));
-    }
+// --- COULEUR DE LIGNE ---
+function applyColor(selectElement) {
+  const tr = selectElement.closest('tr');
+  const colors = {
+    'PP': '#d4edda',
+    'PA': '#81bcec',
+    'CD': '#fff3cd',
+    'AD': '#f8d7da'
+  };
+  tr.style.backgroundColor = colors[selectElement.value] || '';
+  toggleInputs(selectElement);
+}
 
+// --- MODALES ---
+function openModal() {
+  document.getElementById('imageModal').style.display = 'block';
+}
+function closeModal() {
+  document.getElementById('imageModal').style.display = 'none';
+}
+function openModalFho() {
+  document.getElementById('imageFhoModal').style.display = 'block';
+}
+function closeFhoModal() {
+  document.getElementById('imageFhoModal').style.display = 'none';
+}
 
-    // Fonction pour ouvrir la modale
-    function openModal(imageUrl) {
-      const modal = document.getElementById('imageModal');
-      const modalImg = document.getElementById('modalImage');
-      modal.style.display = 'block';
-    }
-    
-    function openModalFho(imageUrl) {
-      const modal = document.getElementById('imageFhoModal');
-      modal.style.display = 'block';
-    }
+document.getElementById('openModalBtn').onclick = openModal;
+document.getElementById('openModalFhoBtn').onclick = openModalFho;
+document.getElementsByClassName('close')[0].onclick = closeModal;
+document.getElementsByClassName('close-fho')[0].onclick = closeFhoModal;
 
-    // Fonction pour fermer la modale
-    function closeModal() {
-      const modal = document.getElementById('imageModal');
-      modal.style.display = 'none';
-    }
-        // Fonction pour fermer la modale
-    function closeFhoModal() {
-      const modal = document.getElementById('imageFhoModal');
-      modal.style.display = 'none';
-    }
+window.onclick = function(event) {
+  if (event.target === document.getElementById('imageModal')) closeModal();
+  if (event.target === document.getElementById('imageFhoModal')) closeFhoModal();
+};
 
-    // Écouteur d'événement pour le bouton d'ouverture
-    document.getElementById('openModalBtn').onclick = function () {
-      openModal('regles.png');
-    };
-    
-    document.getElementById('openModalFhoBtn').onclick = function () {
-      openModalFho();
-    };
+// =============================================
+// NUMÉROTATION AUTOMATIQUE DES CR
+// =============================================
+function generateCRNumber() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const key = 'cr-counter-' + year;
+  let counter = parseInt(localStorage.getItem(key) || '0') + 1;
+  localStorage.setItem(key, counter.toString());
+  return 'OBS-' + year + '-' + String(counter).padStart(3, '0');
+}
 
-    // Écouteur d'événement pour le bouton de fermeture
-    document.getElementsByClassName('close')[0].onclick = function () {
-      closeModal();
-    };
+// =============================================
+// HISTORIQUE LOCAL (localStorage)
+// =============================================
+function getHistorique() {
+  try {
+    return JSON.parse(localStorage.getItem('historique-cr') || '[]');
+  } catch (e) {
+    return [];
+  }
+}
 
-        document.getElementsByClassName('close-fho')[0].onclick = function () {
-      closeFhoModal();
-    };
+function saveHistorique(data) {
+  localStorage.setItem('historique-cr', JSON.stringify(data));
+}
 
-    // Fermer la modale si l'utilisateur clique en dehors de l'image
-    window.onclick = function (event) {
-      const modal = document.getElementById('imageModal');
-      const fhoModal = document.getElementById('imageFhoModal');
-      if (event.target == modal) {
-        closeModal();
-      }
-            if (event.target == fhoModal) {
-        closeFhoModal();
-      }
-    };
+// --- SAUVEGARDER LE CR ACTUEL ---
+function saveCR() {
+  const crNum = document.getElementById('cr-number').textContent;
+  const date = document.getElementById('visite-date').value;
+  const chantier = document.getElementById('chantier').value;
+  const activite = document.getElementById('activite').value;
+  const conducteur = document.getElementById('conducteur').value;
 
-    window.onload = function () {
-          // Efface tout le localStorage
-      localStorage.clear();
+  if (!chantier.trim()) {
+    alert('Veuillez renseigner le nom du chantier avant de sauvegarder.');
+    return;
+  }
 
-      // Efface tout le sessionStorage
-      sessionStorage.clear();
+  // Collecter les observations
+  const observations = [];
+  document.querySelectorAll('#obs-table tbody tr').forEach(tr => {
+    const type = tr.querySelector('.type-select').value;
+    const desc = tr.querySelector('.description').value;
+    const action = tr.querySelector('.action-text') ? tr.querySelector('.action-text').value : '';
+    const echeance = tr.querySelector('.echeance-input') ? tr.querySelector('.echeance-input').value : '';
+    const statut = tr.querySelector('.statut-select') ? tr.querySelector('.statut-select').value : '';
+    observations.push({ type, desc, action, echeance, statut });
+  });
 
-      window.addEventListener("load", () => {
+  const cr = {
+    id: crNum,
+    date: date,
+    chantier: chantier,
+    activite: activite,
+    conducteur: conducteur,
+    observations: observations,
+    savedAt: new Date().toISOString()
+  };
 
-        // Si tu veux aussi vider tous les inputs et textarea
-        document.querySelectorAll("input, textarea").forEach(el => {
-          el.value = "";
-        });
-      });
+  // Sauvegarder dans l'historique
+  const historique = getHistorique();
+  // Remplacer si même ID existe déjà
+  const existIndex = historique.findIndex(h => h.id === crNum);
+  if (existIndex >= 0) {
+    historique[existIndex] = cr;
+  } else {
+    historique.unshift(cr);
+  }
+  saveHistorique(historique);
+
+  // Sauvegarder les chantiers/conducteurs/activités pour autocomplétion
+  saveAutocompletionValue('chantiers', chantier);
+  saveAutocompletionValue('conducteurs', conducteur);
+  saveAutocompletionValue('activites', activite);
+  loadAutocompletion();
+
+  showToast('CR ' + crNum + ' sauvegardé ✓');
+}
+
+// --- TOAST NOTIFICATION ---
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.classList.remove('hidden');
+  toast.classList.add('visible');
+  setTimeout(() => {
+    toast.classList.remove('visible');
+    toast.classList.add('hidden');
+  }, 2500);
+}
+
+// --- PANNEAU HISTORIQUE ---
+function toggleHistorique() {
+  const panel = document.getElementById('historique-panel');
+  const overlay = document.getElementById('overlay');
+  const isHidden = panel.classList.contains('hidden');
+  if (isHidden) {
+    renderHistorique();
+    panel.classList.remove('hidden');
+    overlay.classList.remove('hidden');
+  } else {
+    panel.classList.add('hidden');
+    overlay.classList.add('hidden');
+  }
+}
+
+function renderHistorique() {
+  const list = document.getElementById('historique-list');
+  const historique = getHistorique();
+  if (historique.length === 0) {
+    list.innerHTML = '<p class="historique-empty">Aucun CR sauvegardé.</p>';
+    return;
+  }
+  list.innerHTML = historique.map((cr, i) => {
+    const nbObs = cr.observations ? cr.observations.length : 0;
+    const nbPP = cr.observations ? cr.observations.filter(o => o.type === 'PP').length : 0;
+    const nbPA = cr.observations ? cr.observations.filter(o => o.type === 'PA').length : 0;
+    const nbCD = cr.observations ? cr.observations.filter(o => o.type === 'CD').length : 0;
+    const nbAD = cr.observations ? cr.observations.filter(o => o.type === 'AD').length : 0;
+    return `
+      <div class="historique-item" data-index="${i}">
+        <div class="historique-item-header">
+          <strong>${cr.id}</strong>
+          <span class="historique-date">${cr.date || '—'}</span>
+        </div>
+        <div class="historique-item-body">
+          <span>📍 ${cr.chantier || '—'}</span>
+          <span class="historique-obs-count">${nbObs} obs. (${nbPP} PP, ${nbPA} PA, ${nbCD} CD, ${nbAD} AD)</span>
+        </div>
+        <div class="historique-item-actions">
+          <button onclick="loadCR(${i})" class="btn-load">📂 Charger</button>
+          <button onclick="deleteCR(${i})" class="btn-delete-cr">🗑️</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function filterHistorique() {
+  const search = document.getElementById('historique-search').value.toLowerCase();
+  const items = document.querySelectorAll('.historique-item');
+  items.forEach(item => {
+    const text = item.textContent.toLowerCase();
+    item.style.display = text.includes(search) ? '' : 'none';
+  });
+}
+
+// --- CHARGER UN CR DEPUIS L'HISTORIQUE ---
+function loadCR(index) {
+  const historique = getHistorique();
+  const cr = historique[index];
+  if (!cr) return;
+
+  document.getElementById('cr-number').textContent = cr.id;
+  document.getElementById('visite-date').value = cr.date || '';
+  document.getElementById('chantier').value = cr.chantier || '';
+  document.getElementById('activite').value = cr.activite || '';
+  document.getElementById('conducteur').value = cr.conducteur || '';
+
+  // Vider le tableau
+  const tbody = document.querySelector('#obs-table tbody');
+  tbody.innerHTML = '';
+
+  // Recharger les observations
+  if (cr.observations) {
+    cr.observations.forEach(obs => {
       addRow();
-      document.getElementById('visite-date').valueAsDate = new Date();
-    }
-
-    const photoInputChantier = document.getElementById('photo-input-chantier');
-    const photoContainerChantier = document.getElementById('photo-container-chantier');
-
-    photoInputChantier.addEventListener('change', function () {
-
-      Array.from(this.files).forEach((file, index) => {
-        const reader = new FileReader();
-
-        reader.onload = function (e) {
-          // Crée un conteneur pour chaque image + bouton
-          const imageWrapper = document.createElement('div');
-          imageWrapper.style.position = 'relative';
-          imageWrapper.style.display = 'inline-block';
-
-          // Image preview
-          const img = document.createElement('img');
-          img.src = e.target.result;
-          img.style.width = '300px';
-          img.style.height = 'auto';
-          img.style.border = '1px solid #ccc';
-          img.style.borderRadius = '8px';
-
-          // Bouton de suppression
-          const btn = document.createElement('button');
-          btn.textContent = '✕';
-          btn.style.position = 'absolute';
-          btn.style.top = '0';
-          btn.style.right = '0';
-          btn.style.background = 'rgba(0,0,0,0.6)';
-          btn.style.color = 'white';
-          btn.style.border = 'none';
-          btn.style.borderRadius = '0 8px 0 8px';
-          btn.style.cursor = 'pointer';
-
-          btn.addEventListener('click', () => {
-            imageWrapper.remove();
-          });
-
-          // Ajout au DOM
-          imageWrapper.appendChild(img);
-          imageWrapper.appendChild(btn);
-          photoContainerChantier.appendChild(imageWrapper);
-        };
-        reader.readAsDataURL(file);
-      });
+      const tr = tbody.lastElementChild;
+      tr.querySelector('.type-select').value = obs.type;
+      tr.querySelector('.description').value = obs.desc || '';
+      if (tr.querySelector('.action-text')) tr.querySelector('.action-text').value = obs.action || '';
+      if (tr.querySelector('.echeance-input')) tr.querySelector('.echeance-input').value = obs.echeance || '';
+      if (tr.querySelector('.statut-select')) tr.querySelector('.statut-select').value = obs.statut || 'À planifier';
+      applyColor(tr.querySelector('.type-select'));
     });
+  }
 
-    const photoInput = document.getElementById('photo-input');
-    const photoContainer = document.getElementById('photo-container');
+  updateCounters();
+  toggleHistorique();
+  showToast('CR ' + cr.id + ' chargé');
+}
 
-// Met à jour les numéros de chaque photo
+// --- SUPPRIMER UN CR ---
+function deleteCR(index) {
+  if (!confirm('Supprimer ce CR de l\'historique ?')) return;
+  const historique = getHistorique();
+  historique.splice(index, 1);
+  saveHistorique(historique);
+  renderHistorique();
+}
+
+// --- TOUT SUPPRIMER ---
+function clearHistorique() {
+  if (!confirm('Supprimer TOUS les CR de l\'historique ? Cette action est irréversible.')) return;
+  localStorage.removeItem('historique-cr');
+  renderHistorique();
+  showToast('Historique vidé');
+}
+
+// =============================================
+// AUTOCOMPLÉTION (chantiers, conducteurs, activités)
+// =============================================
+function saveAutocompletionValue(key, value) {
+  if (!value || !value.trim()) return;
+  let values = [];
+  try { values = JSON.parse(localStorage.getItem('autocomplete-' + key) || '[]'); } catch(e) { values = []; }
+  const trimmed = value.trim();
+  if (!values.includes(trimmed)) {
+    values.push(trimmed);
+    // Garder les 50 derniers max
+    if (values.length > 50) values = values.slice(-50);
+    localStorage.setItem('autocomplete-' + key, JSON.stringify(values));
+  }
+}
+
+function loadAutocompletion() {
+  ['chantiers', 'conducteurs', 'activites'].forEach(key => {
+    const listId = key + '-list';
+    const datalist = document.getElementById(listId);
+    if (!datalist) return;
+    let values = [];
+    try { values = JSON.parse(localStorage.getItem('autocomplete-' + key) || '[]'); } catch(e) {}
+    datalist.innerHTML = values.map(v => `<option value="${v}">`).join('');
+  });
+}
+
+// =============================================
+// EXPORT EXCEL
+// =============================================
+function exportExcel() {
+  const date = document.getElementById('visite-date').value;
+  const chantier = document.getElementById('chantier').value;
+  const crNum = document.getElementById('cr-number').textContent;
+
+  const data = [];
+  // En-tête
+  data.push(['CR', crNum, 'Date', date, 'Chantier', chantier]);
+  data.push([]);
+  data.push(['Type', 'Description', 'Action', 'Échéance', 'Statut']);
+
+  document.querySelectorAll('#obs-table tbody tr').forEach(tr => {
+    const type = tr.querySelector('.type-select').value;
+    const desc = tr.querySelector('.description').value;
+    const action = tr.querySelector('.action-text') ? tr.querySelector('.action-text').value : '';
+    const echeance = tr.querySelector('.echeance-input') ? tr.querySelector('.echeance-input').value : '';
+    const statut = tr.querySelector('.statut-select') ? tr.querySelector('.statut-select').value : '';
+    data.push([type, desc, action, echeance, statut]);
+  });
+
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  // Largeurs de colonnes
+  ws['!cols'] = [
+    { wch: 8 },
+    { wch: 50 },
+    { wch: 50 },
+    { wch: 15 },
+    { wch: 15 }
+  ];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Observations HSE');
+  const fileName = (crNum || 'OBS-HSE') + '_' + (chantier || 'export').replace(/[^a-zA-Z0-9]/g, '_') + '.xlsx';
+  XLSX.writeFile(wb, fileName);
+}
+
+// --- EXPORTER TOUT L'HISTORIQUE EN EXCEL ---
+function exportAllHistoriqueExcel() {
+  const historique = getHistorique();
+  if (historique.length === 0) {
+    alert('Aucun CR dans l\'historique.');
+    return;
+  }
+  const data = [];
+  data.push(['N° CR', 'Date', 'Chantier', 'Activité', 'Conducteur', 'Type', 'Description', 'Action', 'Échéance', 'Statut']);
+
+  historique.forEach(cr => {
+    if (cr.observations && cr.observations.length > 0) {
+      cr.observations.forEach(obs => {
+        data.push([cr.id, cr.date, cr.chantier, cr.activite, cr.conducteur, obs.type, obs.desc, obs.action, obs.echeance, obs.statut]);
+      });
+    } else {
+      data.push([cr.id, cr.date, cr.chantier, cr.activite, cr.conducteur, '', '', '', '', '']);
+    }
+  });
+
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  ws['!cols'] = [
+    { wch: 18 }, { wch: 12 }, { wch: 25 }, { wch: 20 }, { wch: 20 },
+    { wch: 8 }, { wch: 50 }, { wch: 50 }, { wch: 15 }, { wch: 15 }
+  ];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Historique CR HSE');
+  XLSX.writeFile(wb, 'Historique_CR_HSE.xlsx');
+}
+
+// =============================================
+// NOUVEAU CR
+// =============================================
+function nouveauCR() {
+  if (!confirm('Créer un nouveau CR ? Le CR actuel non sauvegardé sera perdu.')) return;
+  document.getElementById('cr-number').textContent = generateCRNumber();
+  document.getElementById('visite-date').valueAsDate = new Date();
+  document.getElementById('chantier').value = '';
+  document.getElementById('activite').value = '';
+  document.getElementById('conducteur').value = '';
+  document.querySelector('#obs-table tbody').innerHTML = '';
+  // Vider les photos
+  document.getElementById('photo-container-chantier').innerHTML = '';
+  document.getElementById('photo-container').innerHTML = '';
+  addRow();
+}
+
+// =============================================
+// PHOTOS CHANTIER
+// =============================================
+const photoInputChantier = document.getElementById('photo-input-chantier');
+const photoContainerChantier = document.getElementById('photo-container-chantier');
+
+photoInputChantier.addEventListener('change', function() {
+  Array.from(this.files).forEach(file => {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'photo-wrapper';
+
+      const img = document.createElement('img');
+      img.src = e.target.result;
+
+      const btn = document.createElement('button');
+      btn.textContent = '✕';
+      btn.className = 'photo-delete no-print';
+      btn.addEventListener('click', () => wrapper.remove());
+
+      wrapper.appendChild(img);
+      wrapper.appendChild(btn);
+      photoContainerChantier.appendChild(wrapper);
+    };
+    reader.readAsDataURL(file);
+  });
+  this.value = '';
+});
+
+// =============================================
+// PHOTOS OBSERVATIONS
+// =============================================
+const photoInput = document.getElementById('photo-input');
+const photoContainer = document.getElementById('photo-container');
+
 function updatePhotoLabels() {
   const wrappers = photoContainer.querySelectorAll('.photo-wrapper');
   wrappers.forEach((wrapper, i) => {
     const label = wrapper.querySelector('label');
-    if (label) {
-      label.textContent = 'Photo ' + (i + 1);
-    }
+    if (label) label.textContent = 'Photo ' + (i + 1);
   });
 }
 
-photoInput.addEventListener('change', function () {
-  Array.from(this.files).forEach((file) => {
+photoInput.addEventListener('change', function() {
+  Array.from(this.files).forEach(file => {
     const reader = new FileReader();
-
-    reader.onload = function (e) {
-      const imageWrapper = document.createElement('div');
-      imageWrapper.classList.add('photo-wrapper'); // ← important !
-      imageWrapper.style.position = 'relative';
-      imageWrapper.style.display = 'inline-block';
-      imageWrapper.style.margin = '10px';
+    reader.onload = function(e) {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'photo-wrapper';
 
       const img = document.createElement('img');
       img.src = e.target.result;
-      img.style.width = '300px';
-      img.style.height = 'auto';
-      img.style.border = '1px solid #ccc';
-      img.style.borderRadius = '8px';
 
       const btn = document.createElement('button');
       btn.textContent = '✕';
-      btn.style.position = 'absolute';
-      btn.style.top = '0';
-      btn.style.right = '0';
-      btn.style.background = 'rgba(0,0,0,0.6)';
-      btn.style.color = 'white';
-      btn.style.border = 'none';
-      btn.style.borderRadius = '0 8px 0 8px';
-      btn.style.cursor = 'pointer';
-
+      btn.className = 'photo-delete no-print';
       btn.addEventListener('click', () => {
-        imageWrapper.remove();
-        updatePhotoLabels(); // Mise à jour après suppression
+        wrapper.remove();
+        updatePhotoLabels();
       });
 
       const label = document.createElement('label');
-      label.textContent = 'Photo '; // sera mis à jour juste après
-      label.style.display = 'block'; // ← indispensable
+      label.style.display = 'block';
       label.style.marginTop = '5px';
       label.style.fontWeight = 'bold';
 
-      imageWrapper.appendChild(img);
-      imageWrapper.appendChild(btn);
-      imageWrapper.appendChild(label);
-      photoContainer.appendChild(imageWrapper);
-
-      updatePhotoLabels(); // Mise à jour après ajout
+      wrapper.appendChild(img);
+      wrapper.appendChild(btn);
+      wrapper.appendChild(label);
+      photoContainer.appendChild(wrapper);
+      updatePhotoLabels();
     };
-
     reader.readAsDataURL(file);
   });
+  this.value = '';
+});
 
-  this.value = ''; // pour permettre un nouveau chargement des mêmes fichiers
-
-    });
-
-// --- DRAG & DROP DES LIGNES DU TABLEAU --- //
-const tbodyObs = document.querySelector("#obs-table tbody");
-
+// =============================================
+// DRAG & DROP DES LIGNES
+// =============================================
+const tbodyObs = document.querySelector('#obs-table tbody');
 let draggingRow = null;
 
-tbodyObs.addEventListener("dragstart", (e) => {
-  const tr = e.target.closest("tr");
+tbodyObs.addEventListener('dragstart', e => {
+  const tr = e.target.closest('tr');
   if (!tr) return;
   draggingRow = tr;
-  tr.classList.add("dragging");
+  tr.classList.add('dragging');
 });
 
-tbodyObs.addEventListener("dragend", () => {
-  if (draggingRow) draggingRow.classList.remove("dragging");
+tbodyObs.addEventListener('dragend', () => {
+  if (draggingRow) draggingRow.classList.remove('dragging');
   draggingRow = null;
-  updateCounters(); // Mise à jour compteur après déplacement
+  updateCounters();
 });
 
-tbodyObs.addEventListener("dragover", (e) => {
+tbodyObs.addEventListener('dragover', e => {
   e.preventDefault();
-
   const y = e.clientY;
   const after = getDragAfterElement(tbodyObs, y);
-
   if (after == null) {
     tbodyObs.appendChild(draggingRow);
   } else {
@@ -335,18 +554,23 @@ tbodyObs.addEventListener("dragover", (e) => {
 });
 
 function getDragAfterElement(container, y) {
-  const rows = [...container.querySelectorAll("tr:not(.dragging)")];
-
-  return rows.reduce(
-    (closest, row) => {
-      const box = row.getBoundingClientRect();
-      const offset = y - (box.top + box.height / 2);
-
-      if (offset < 0 && offset > closest.offset) {
-        return { offset, element: row };
-      }
-      return closest;
-    },
-    { offset: Number.NEGATIVE_INFINITY }
-  ).element;
+  const rows = [...container.querySelectorAll('tr:not(.dragging)')];
+  return rows.reduce((closest, row) => {
+    const box = row.getBoundingClientRect();
+    const offset = y - (box.top + box.height / 2);
+    if (offset < 0 && offset > closest.offset) {
+      return { offset, element: row };
+    }
+    return closest;
+  }, { offset: Number.NEGATIVE_INFINITY }).element;
 }
+
+// =============================================
+// INITIALISATION
+// =============================================
+window.onload = function() {
+  document.getElementById('cr-number').textContent = generateCRNumber();
+  document.getElementById('visite-date').valueAsDate = new Date();
+  loadAutocompletion();
+  addRow();
+};
