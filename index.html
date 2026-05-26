@@ -1,133 +1,160 @@
 <!DOCTYPE html>
 <html lang="fr">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <title>OBSERVATIONS HSE</title>
   <link rel="stylesheet" href="styles.css">
 </head>
-
 <body>
-  <div class="container">
-    <img class="logo" src="CDES_Logo.png" alt="">
-    <h1> OBSERVATIONS HSE</h1>
-    <img class="regles" src="regles.png" alt="">
-  </div>
-  <div class="top-fields">
-    <label>Date:<input type="date" id="visite-date" value=""></label>
-    <label>Chantier:<input type="text" id="chantier" placeholder="Nom du chantier"></label>
-    <label>Activité:<input type="text" style="width: 300px;" id="visiteur" placeholder="Nom"></label>
-    <label>Conducteur de travaux:<input type="text" id="visiteur" placeholder="Nom / Fonction"></label>
-  </div>
-  <div>
 
-    <input type="file" id="photo-input-chantier" accept="image/* .png" multiple>
-    <div id="photo-container-chantier"></div>
-  </div>
-  <div class="counters">
-    <span>PP 👍: <span id="count-PP">0</span></span>
-    <span>PA 👍: <span id="count-PA">0</span></span>
-    <span>CD ⚠️: <span id="count-CD">0</span></span>
-    <span>AD 🚫: <span id="count-AD">0</span></span>
-    <button class="show-consignes" id="openModalBtn">?</button>
-<img 
-    src="fho.png"
-    id="openModalFhoBtn"
-    class="btn-image"
-    alt="Ouvrir FHO">
-  </div>
-  <table id="obs-table">
-    <thead>
-      <tr>
-        <th class="medium-row">Type</th>
-        <th class="large-row">Description</th>
-        <th class="large-row">Action</th>
-        <th class="medium-row">Échéance</th>
-        <th class="medium-row">Statut</th>
-        <th class="small-row no-print">Suppr.</th>
-      </tr>
-    </thead>
-    <tbody>
-      <!-- Lignes dynamiques ici -->
-    </tbody>
-  </table>
-  <div class="buttons">
-    <button class="add-row" onclick="addRow()">Ajouter une observation</button>
+  <!-- BARRE HISTORIQUE -->
+  <div id="historique-panel" class="historique-panel hidden">
+    <div class="historique-header">
+      <h2>📋 Historique des CR</h2>
+      <button class="close-historique" onclick="toggleHistorique()">✕</button>
+    </div>
+    <div class="historique-search">
+      <input type="text" id="historique-search" placeholder="🔍 Rechercher par chantier, date..." oninput="filterHistorique()">
+    </div>
+    <div id="historique-list" class="historique-list"></div>
+    <div class="historique-footer">
+      <button class="btn-danger" onclick="clearHistorique()">🗑️ Tout supprimer</button>
+      <button class="btn-export-all" onclick="exportAllHistoriqueExcel()">📊 Exporter tout (Excel)</button>
+    </div>
   </div>
 
-  <input type="file" id="photo-input" accept="image/* .png" multiple>
-  <div id="photo-container"></div>
+  <!-- OVERLAY -->
+  <div id="overlay" class="overlay hidden" onclick="toggleHistorique()"></div>
 
-  <div class="buttons">
-    <button class="export" onclick="print()"> Exporter en PDF</button>
+  <div id="printable-zone">
+    <div class="container">
+      <img class="logo" src="CDES_Logo.png" alt="CDES">
+      <h1>OBSERVATIONS HSE</h1>
+      <img class="regles" src="regles.png" alt="Règles">
+    </div>
+
+    <!-- NUMÉRO DE CR -->
+    <div class="cr-number-bar">
+      <span class="cr-label">CR N°</span>
+      <span class="cr-number" id="cr-number">—</span>
+      <button class="btn-historique no-print" onclick="toggleHistorique()">📋 Historique</button>
+    </div>
+
+    <div class="top-fields">
+      <label>Date:<input type="date" id="visite-date" value=""></label>
+      <label>Chantier:
+        <input type="text" id="chantier" list="chantiers-list" placeholder="Nom du chantier">
+        <datalist id="chantiers-list"></datalist>
+      </label>
+      <label>Activité:
+        <input type="text" id="activite" list="activites-list" placeholder="Activité" style="width:300px;">
+        <datalist id="activites-list"></datalist>
+      </label>
+      <label>Conducteur de travaux:
+        <input type="text" id="conducteur" list="conducteurs-list" placeholder="Nom / Fonction">
+        <datalist id="conducteurs-list"></datalist>
+      </label>
+    </div>
+
+    <div>
+      <input type="file" id="photo-input-chantier" accept="image/*,.png" multiple class="no-print">
+      <div id="photo-container-chantier"></div>
+    </div>
+
+    <div class="counters">
+      <span class="counter-pp">PP 👍: <span id="count-PP">0</span></span>
+      <span class="counter-pa">PA 👍: <span id="count-PA">0</span></span>
+      <span class="counter-cd">CD ⚠️: <span id="count-CD">0</span></span>
+      <span class="counter-ad">AD 🚫: <span id="count-AD">0</span></span>
+      <button class="show-consignes no-print" id="openModalBtn">?</button>
+      <img src="fho.png" id="openModalFhoBtn" class="btn-image no-print" alt="Ouvrir FHO">
+    </div>
+
+    <table id="obs-table">
+      <thead>
+        <tr>
+          <th class="medium-row">Type</th>
+          <th class="large-row">Description</th>
+          <th class="large-row">Action</th>
+          <th class="medium-row">Échéance</th>
+          <th class="medium-row">Statut</th>
+          <th class="small-row no-print">Suppr.</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <div class="buttons no-print">
+      <button class="add-row" onclick="addRow()">+ Ajouter une observation</button>
+    </div>
+
+    <input type="file" id="photo-input" accept="image/*,.png" multiple class="no-print">
+    <div id="photo-container"></div>
   </div>
 
+  <div class="buttons-export no-print">
+    <button class="btn-save" onclick="saveCR()">💾 Sauvegarder le CR</button>
+    <button class="export" onclick="print()">🖨️ Exporter en PDF</button>
+    <button class="btn-excel" onclick="exportExcel()">📊 Exporter en Excel</button>
+    <button class="btn-new" onclick="nouveauCR()">📝 Nouveau CR</button>
+  </div>
 
-  <!-- Structure de la modale -->
+  <!-- MODALE INFORMATIONS -->
   <div id="imageModal" class="modal">
     <div class="modal-content">
-      <h1> Informations générales</h1>
-      <ul>
-        <li> 3 étapes : Observer/Discuter/Se mettre d’accord </li>
-        <li> Pas de jugements, de réprimandes ou de mesures disciplinaires</li>
-        <li> Se concentrer sur les points positifs et les points à améliorer (3 PP pour 1 AD/CD)</li>
-        <li> Donner la priorité aux actions immédiates</li>
-        <li> Les actions doivent être convenues conjointement entre le visiteur et la personne rencontrée</li>
-        <li> Se concentrer sur les Règles qui Sauvent des vies </li>
-      </ul>
-      <ul>
-        <li style="color:green ;">PP : Point Positif</li>
-        <li style="color: blue ;">PA : Point d'amélioration</li>
-        <li style="color:red ;">AD : Acte Dangereux : téléphoner en conduisant, opération de travail sans EPI </li>
-        <li style="color:orange;">CD : Condition dangereuse : une consigne pas à jour, des trous dans le sol, absence de
-          balisage </li>
-      </ul>
       <span class="close">&times;</span>
+      <h1>Informations générales</h1>
+      <ul>
+        <li>3 étapes : Observer / Discuter / Se mettre d'accord</li>
+        <li>Pas de jugements, de réprimandes ou de mesures disciplinaires</li>
+        <li>Se concentrer sur les points positifs et les points à améliorer (3 PP pour 1 AD/CD)</li>
+        <li>Donner la priorité aux actions immédiates</li>
+        <li>Les actions doivent être convenues conjointement entre le visiteur et la personne rencontrée</li>
+        <li>Se concentrer sur les Règles qui Sauvent des vies</li>
+      </ul>
+      <ul>
+        <li style="color:green;">PP : Point Positif</li>
+        <li style="color:blue;">PA : Point d'amélioration</li>
+        <li style="color:red;">AD : Acte Dangereux : téléphoner en conduisant, opération de travail sans EPI</li>
+        <li style="color:orange;">CD : Condition dangereuse : une consigne pas à jour, des trous dans le sol, absence de balisage</li>
+      </ul>
     </div>
   </div>
-    <div id="imageFhoModal" class="modal-fho">
+
+  <!-- MODALE FHO -->
+  <div id="imageFhoModal" class="modal-fho">
     <div class="modal-content-fho">
-      <table class="attestation no-print">
-  <tbody>
-    <tr>
-      <td>
-        <div class="contenu">
-
-          <!-- Image à gauche -->
-          <img src="fho.png" alt="">
-
-          <!-- Texte à droite -->
-          <div class="texte">
-            <p>
-              Pour réaliser une observation HSE pertinente, les situations
-              de travail doivent être analysées selon les Facteurs Humains
-              et Organisationnels (FHO).
-            </p>
-
-            <span class="titre">Exemples :</span>
-
-            <ul>
-              <li><b>Humain :</b> port des EPI, vigilance, respect des consignes</li>
-              <li><b>Matériel :</b> extincteur manquant, matériel défectueux</li>
-              <li><b>Organisationnel :</b> coactivité, préparation, communication</li>
-              <li><b>Environnemental :</b> pollution, stockage, propreté chantier</li>
-            </ul>
-          </div>
-
-        </div>
-      </td>
-    </tr>
-  </tbody>
-</table>
       <span class="close-fho">&times;</span>
+      <table class="attestation">
+        <tbody>
+          <tr>
+            <td>
+              <div class="contenu">
+                <img src="fho.png" alt="FHO">
+                <div class="texte">
+                  <p>Pour réaliser une observation HSE pertinente, les situations de travail doivent être analysées selon les Facteurs Humains et Organisationnels (FHO).</p>
+                  <span class="titre">Exemples :</span>
+                  <ul>
+                    <li><b>Humain :</b> port des EPI, vigilance, respect des consignes</li>
+                    <li><b>Matériel :</b> extincteur manquant, matériel défectueux</li>
+                    <li><b>Organisationnel :</b> coactivité, préparation, communication</li>
+                    <li><b>Environnemental :</b> pollution, stockage, propreté chantier</li>
+                  </ul>
+                </div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   </div>
 
+  <!-- TOAST NOTIFICATION -->
+  <div id="toast" class="toast hidden">CR sauvegardé ✓</div>
 
-
-  <script src="index.js"> </script>
+  <script src="index.js"></script>
 </body>
-
 </html>
