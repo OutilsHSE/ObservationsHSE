@@ -834,10 +834,9 @@
 
   <script>
     // ========================================================
-    // CONFIGURATION SHAREPOINT
+    // CONFIGURATION WEBHOOK POWER AUTOMATE
     // ========================================================
-    const SP_SITE = 'https://cdes827970.sharepoint.com/sites/CDES-Production';
-    const SP_LIST = 'CR_HSE';
+    const WEBHOOK_URL = 'https://defaultbd30eedc955b45aa8995116b2ad83b.53.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/5cd23dadac734dc89a5063ecf850ea01/triggers/manual/paths/invoke?api-version=1';
 
     // ========================================================
     // NUMÉROTATION AUTOMATIQUE
@@ -1027,71 +1026,56 @@
       }
 
       const btn = document.querySelector('.btn-success');
-      btn.textContent = '⏳ Envoi en cours...';
+      btn.innerHTML = '⏳ Envoi en cours...';
       btn.disabled = true;
 
-      try {
-        // Récupération du token SharePoint via l'API REST
-        // Note : nécessite d'être connecté au même tenant Microsoft 365
-        let errors = 0;
-        let success = 0;
+      let errors = 0;
+      let success = 0;
 
-        for (const obs of data.observations) {
-          const body = {
-            Title: obs.nCR,
-            Date_x0020_Chantier: obs.dateVisite ? new Date(obs.dateVisite).toISOString() : null,
-            Chantier: obs.chantier,
-            Activit_x00e9_: obs.activite,
-            Conducteur_x0020_de_x0020_travaux: obs.conducteur,
-            Type_x0020_Obs: obs.type,
-            Description: obs.description,
-            Action_x0020_corrective: obs.action,
-            Domaine: obs.domaine,
-            Impact_x0020_HSE: obs.impact,
-            Transversal_x0020__x003f_: obs.transversal,
-            _x00c9_ch_x00e9_ance: obs.echeance ? new Date(obs.echeance).toISOString() : null,
-            Statut: obs.statut
+      for (const obs of data.observations) {
+        try {
+          const payload = {
+            nCR: data.crNum,
+            dateVisite: data.date,
+            chantier: data.chantier,
+            activite: data.activite,
+            conducteur: data.conducteur,
+            visiteur: data.visiteur,
+            type: obs.type,
+            description: obs.description,
+            action: obs.action,
+            domaine: obs.domaine,
+            impact: obs.impact,
+            transversal: obs.transversal,
+            echeance: obs.echeance,
+            statut: obs.statut
           };
 
-          const resp = await fetch(
-            SP_SITE + '/_api/web/lists/getbytitle(\'' + SP_LIST + '\')/items',
-            {
-              method: 'POST',
-              headers: {
-                'Accept': 'application/json;odata=verbose',
-                'Content-Type': 'application/json;odata=verbose',
-                'X-RequestDigest': await getFormDigest()
-              },
-              body: JSON.stringify({ '__metadata': { 'type': 'SP.Data.CR_x005f_HSEListItem' }, ...body })
-            }
-          );
+          const resp = await fetch(WEBHOOK_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
 
           if (resp.ok) { success++; }
-          else { errors++; console.error('Erreur obs', obs.nObs, await resp.text()); }
-        }
+          else { errors++; console.error('Erreur obs', obs.nObs, resp.status); }
 
-        if (errors === 0) {
-          toast('✅ ' + success + ' observation(s) envoyée(s) vers SharePoint', 'success');
-        } else {
-          toast('⚠️ ' + success + ' envoyées, ' + errors + ' erreur(s)', 'error');
+        } catch (e) {
+          errors++;
+          console.error('Erreur réseau', e);
         }
+      }
 
-      } catch (e) {
-        console.error(e);
-        toast('❌ Erreur de connexion SharePoint. Vérifiez votre connexion.', 'error');
+      if (errors === 0) {
+        toast('✅ ' + success + ' observation(s) envoyée(s) vers SharePoint', 'success');
+      } else if (success > 0) {
+        toast('⚠️ ' + success + ' envoyées, ' + errors + ' erreur(s)', 'error');
+      } else {
+        toast('❌ Erreur d\'envoi. Vérifiez votre connexion.', 'error');
       }
 
       btn.innerHTML = '☁️ Envoyer vers SharePoint';
       btn.disabled = false;
-    }
-
-    async function getFormDigest() {
-      const resp = await fetch(SP_SITE + '/_api/contextinfo', {
-        method: 'POST',
-        headers: { 'Accept': 'application/json;odata=verbose' }
-      });
-      const data = await resp.json();
-      return data.d.GetContextWebInformation.FormDigestValue;
     }
 
     // ========================================================
