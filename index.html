@@ -784,7 +784,7 @@
     <!-- BARRE D'ACTIONS -->
     <div class="action-bar no-print">
       <button class="btn btn-success" onclick="envoyerSharePoint()">
-        ☁️ Envoyer vers SharePoint
+        ☁️ Envoyer les données
       </button>
       <button class="btn btn-warning" onclick="exportExcel()">
         📊 Exporter Excel
@@ -834,9 +834,9 @@
 
   <script>
     // ========================================================
-    // CONFIGURATION WEBHOOK POWER AUTOMATE
+    // CONFIGURATION WEBHOOK GOOGLE APPS SCRIPT
     // ========================================================
-    const WEBHOOK_URL = 'https://defaultbd30eedc955b45aa8995116b2ad83b.53.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/5cd23dadac734dc89a5063ecf850ea01/triggers/manual/paths/invoke?api-version=1';
+    const WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbxxveoZL1g2bziP1G8JrXZktagm7ylJx6TGc1zZq2gBAQ6EvQ4G5d-feR6tV_MmSXOu/exec';
 
     // ========================================================
     // NUMÉROTATION AUTOMATIQUE
@@ -1053,8 +1053,8 @@
 
           const resp = await fetch(WEBHOOK_URL, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
+            body: JSON.stringify(payload),
+            redirect: 'follow'
           });
 
           if (resp.ok) { success++; }
@@ -1067,14 +1067,14 @@
       }
 
       if (errors === 0) {
-        toast('✅ ' + success + ' observation(s) envoyée(s) vers SharePoint', 'success');
+        toast('✅ ' + success + ' observation(s) envoyée(s) ✓', 'success');
       } else if (success > 0) {
         toast('⚠️ ' + success + ' envoyées, ' + errors + ' erreur(s)', 'error');
       } else {
         toast('❌ Erreur d\'envoi. Vérifiez votre connexion.', 'error');
       }
 
-      btn.innerHTML = '☁️ Envoyer vers SharePoint';
+      btn.innerHTML = '☁️ Envoyer les données';
       btn.disabled = false;
     }
 
