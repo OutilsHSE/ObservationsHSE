@@ -1,133 +1,1281 @@
 <!DOCTYPE html>
 <html lang="fr">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-  <title>OBSERVATIONS HSE</title>
-  <link rel="stylesheet" href="styles.css">
+  <title>CR HSE — CDES</title>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    :root {
+      --bleu-marine: #003A6E;
+      --bleu-clair: #0077B6;
+      --bleu-accent: #00B4D8;
+      --bleu-pale: #E8F4FD;
+      --vert: #2DC653;
+      --orange: #F4A03A;
+      --rouge: #E63946;
+      --bleu-pa: #4895EF;
+      --gris-clair: #F5F7FA;
+      --gris-bord: #D0DAE8;
+      --texte: #1A2B3C;
+      --blanc: #FFFFFF;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Barlow', sans-serif;
+      background: var(--gris-clair);
+      color: var(--texte);
+      min-height: 100vh;
+    }
+
+    /* ===== HEADER ===== */
+    .header {
+      background: linear-gradient(135deg, var(--bleu-marine) 0%, var(--bleu-clair) 100%);
+      padding: 0;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .header::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -10%;
+      width: 400px;
+      height: 400px;
+      border-radius: 50%;
+      background: rgba(0, 180, 216, 0.12);
+      pointer-events: none;
+    }
+
+    .header-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 28px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .header-logo {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .header-logo img {
+      height: 48px;
+      filter: brightness(0) invert(1);
+    }
+
+    .header-title {
+      color: white;
+    }
+
+    .header-title h1 {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 1.7rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      line-height: 1;
+    }
+
+    .header-title p {
+      font-size: 0.78rem;
+      opacity: 0.8;
+      margin-top: 2px;
+      letter-spacing: 0.5px;
+    }
+
+    .header-cr {
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 8px;
+      padding: 8px 16px;
+      color: white;
+      text-align: right;
+    }
+
+    .header-cr .cr-label {
+      font-size: 0.72rem;
+      opacity: 0.8;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .header-cr .cr-value {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+    }
+
+    /* ===== CONTENU PRINCIPAL ===== */
+    .main {
+      max-width: 100%;
+      margin: 0 auto;
+      padding: 24px 32px 60px;
+    }
+
+    @media (min-width: 1400px) {
+      .main { padding: 24px 48px 60px; }
+    }
+
+    /* ===== SECTION ===== */
+    .section {
+      background: white;
+      border-radius: 12px;
+      padding: 22px 24px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(0,58,110,0.07);
+      border: 1px solid var(--gris-bord);
+    }
+
+    .section-title {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--bleu-marine);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 18px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid var(--bleu-pale);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-title .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--bleu-accent);
+      flex-shrink: 0;
+    }
+
+    /* ===== GRILLE CHAMPS ===== */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 16px;
+    }
+
+    .grid-4 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr 1fr;
+      gap: 16px;
+    }
+
+    @media (max-width: 900px) {
+      .grid-3, .grid-4 { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (max-width: 700px) {
+      .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+    }
+
+    /* ===== CHAMP ===== */
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .field label {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--bleu-marine);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .field input,
+    .field select,
+    .field textarea {
+      border: 1.5px solid var(--gris-bord);
+      border-radius: 7px;
+      padding: 9px 12px;
+      font-family: 'Barlow', sans-serif;
+      font-size: 0.92rem;
+      color: var(--texte);
+      background: white;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      width: 100%;
+    }
+
+    .field input:focus,
+    .field select:focus,
+    .field textarea:focus {
+      outline: none;
+      border-color: var(--bleu-accent);
+      box-shadow: 0 0 0 3px rgba(0,180,216,0.12);
+    }
+
+    .field textarea {
+      resize: vertical;
+      min-height: 70px;
+    }
+
+    /* ===== PHOTOS CHANTIER ===== */
+    .photo-zone {
+      border: 2px dashed var(--gris-bord);
+      border-radius: 10px;
+      padding: 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: var(--gris-clair);
+      display: block;
+      width: 100%;
+    }
+
+    .photo-zone:hover {
+      border-color: var(--bleu-accent);
+      background: var(--bleu-pale);
+    }
+
+    .photo-zone p {
+      color: #8099B4;
+      font-size: 0.88rem;
+      margin-top: 6px;
+    }
+
+    .photo-zone .icon {
+      font-size: 2rem;
+    }
+
+    .photos-preview {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .photo-thumb {
+      position: relative;
+      display: inline-block;
+    }
+
+    .photo-thumb img {
+      width: 90px;
+      height: 70px;
+      object-fit: cover;
+      border-radius: 7px;
+      border: 2px solid var(--gris-bord);
+    }
+
+    .photo-thumb .del-photo {
+      position: absolute;
+      top: -6px;
+      right: -6px;
+      background: var(--rouge);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      font-size: 11px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+    }
+
+    /* ===== COMPTEURS ===== */
+    .compteurs {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+
+    .compteur {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: all 0.2s;
+      user-select: none;
+    }
+
+    .compteur.PP { background: #D4EDDA; color: #155724; border-color: #A8D5B5; }
+    .compteur.PA { background: #CCE5FF; color: #004085; border-color: #9ECFFF; }
+    .compteur.CD { background: #FFF3CD; color: #856404; border-color: #FFE08A; }
+    .compteur.AD { background: #F8D7DA; color: #721C24; border-color: #F5B7BB; }
+
+    .compteur .count {
+      background: rgba(0,0,0,0.12);
+      border-radius: 5px;
+      padding: 1px 7px;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 1.05rem;
+    }
+
+    .btn-aide {
+      background: var(--bleu-marine);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      margin-left: auto;
+    }
+
+    /* ===== TABLEAU OBSERVATIONS ===== */
+    .obs-table-wrapper {
+      overflow-x: auto;
+    }
+
+    table.obs-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.87rem;
+    }
+
+    .obs-table th {
+      background: var(--bleu-marine);
+      color: white;
+      padding: 10px 8px;
+      text-align: left;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 600;
+      font-size: 0.82rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+    }
+
+    .obs-table td {
+      padding: 6px 6px;
+      border-bottom: 1px solid var(--gris-bord);
+      vertical-align: top;
+    }
+
+    .obs-table tr.PP td { background: #F0FBF2; }
+    .obs-table tr.PA td { background: #EBF4FF; }
+    .obs-table tr.CD td { background: #FFFBEE; }
+    .obs-table tr.AD td { background: #FFF1F2; }
+
+    .obs-table select,
+    .obs-table input,
+    .obs-table textarea {
+      border: 1px solid var(--gris-bord);
+      border-radius: 5px;
+      padding: 5px 7px;
+      font-family: 'Barlow', sans-serif;
+      font-size: 0.84rem;
+      width: 100%;
+      background: rgba(255,255,255,0.8);
+    }
+
+    .obs-table select:focus,
+    .obs-table input:focus,
+    .obs-table textarea:focus {
+      outline: none;
+      border-color: var(--bleu-accent);
+    }
+
+    .obs-table textarea {
+      min-height: 54px;
+      resize: vertical;
+    }
+
+    .col-type { width: 80px; }
+    .col-desc { min-width: 180px; }
+    .col-action { min-width: 160px; }
+    .col-domaine { width: 130px; }
+    .col-impact { width: 100px; }
+    .col-transv { width: 65px; }
+    .col-echeance { width: 115px; }
+    .col-statut { width: 110px; }
+    .col-photo { width: 90px; }
+    .col-del { width: 42px; }
+
+    /* Cellule photo dans le tableau */
+    .obs-photo-cell {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .obs-photo-btn {
+      background: var(--bleu-pale);
+      border: 1.5px dashed var(--bleu-accent);
+      color: var(--bleu-clair);
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 0.78rem;
+      cursor: pointer;
+      font-weight: 600;
+      white-space: nowrap;
+      transition: all 0.15s;
+    }
+
+    .obs-photo-btn:hover {
+      background: var(--bleu-clair);
+      color: white;
+    }
+
+    .obs-photo-preview {
+      position: relative;
+      display: inline-block;
+    }
+
+    .obs-photo-preview img {
+      width: 70px;
+      height: 50px;
+      object-fit: cover;
+      border-radius: 5px;
+      border: 1.5px solid var(--gris-bord);
+      cursor: pointer;
+    }
+
+    .obs-photo-preview .photo-del-btn {
+      position: absolute;
+      top: -6px;
+      right: -6px;
+      background: var(--rouge);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 18px;
+      height: 18px;
+      font-size: 10px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+      padding: 0;
+    }
+
+    /* Pour l'impression : grandes images */
+    @media print {
+      .obs-photo-preview img {
+        width: 120px;
+        height: 90px;
+      }
+      .obs-photo-btn { display: none !important; }
+      .photo-del-btn { display: none !important; }
+    }
+
+    .btn-del-obs {
+      background: none;
+      border: none;
+      color: var(--rouge);
+      cursor: pointer;
+      font-size: 1.1rem;
+      padding: 4px;
+      border-radius: 4px;
+      transition: background 0.15s;
+    }
+
+    .btn-del-obs:hover { background: #FFF1F2; }
+
+    /* Badge type */
+    .type-badge {
+      display: inline-block;
+      padding: 3px 7px;
+      border-radius: 5px;
+      font-weight: 700;
+      font-size: 0.78rem;
+      font-family: 'Barlow Condensed', sans-serif;
+    }
+
+    .type-PP { background: #D4EDDA; color: #155724; }
+    .type-PA { background: #CCE5FF; color: #004085; }
+    .type-CD { background: #FFF3CD; color: #856404; }
+    .type-AD { background: #F8D7DA; color: #721C24; }
+
+    /* ===== BOUTON AJOUTER OBSERVATION ===== */
+    .btn-add-obs {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--bleu-pale);
+      border: 2px dashed var(--bleu-accent);
+      color: var(--bleu-clair);
+      border-radius: 8px;
+      padding: 10px 20px;
+      font-family: 'Barlow', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 14px;
+      transition: all 0.2s;
+      width: 100%;
+      justify-content: center;
+    }
+
+    .btn-add-obs:hover {
+      background: var(--bleu-clair);
+      color: white;
+      border-style: solid;
+    }
+
+    /* ===== BARRE D'ACTIONS ===== */
+    .action-bar {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      background: white;
+      border-radius: 12px;
+      padding: 18px 24px;
+      box-shadow: 0 2px 8px rgba(0,58,110,0.07);
+      border: 1px solid var(--gris-bord);
+      position: sticky;
+      bottom: 16px;
+    }
+
+    .btn {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-family: 'Barlow', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn:active { transform: scale(0.97); }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--bleu-marine), var(--bleu-clair));
+      color: white;
+    }
+    .btn-primary:hover { opacity: 0.9; }
+
+    .btn-success {
+      background: linear-gradient(135deg, #1B7A3A, var(--vert));
+      color: white;
+    }
+    .btn-success:hover { opacity: 0.9; }
+
+    .btn-warning {
+      background: linear-gradient(135deg, #C47D00, var(--orange));
+      color: white;
+    }
+    .btn-warning:hover { opacity: 0.9; }
+
+    .btn-secondary {
+      background: var(--gris-clair);
+      color: var(--bleu-marine);
+      border: 1.5px solid var(--gris-bord);
+    }
+    .btn-secondary:hover { background: var(--bleu-pale); border-color: var(--bleu-accent); }
+
+    .btn-danger {
+      background: #FFF1F2;
+      color: var(--rouge);
+      border: 1.5px solid #F5B7BB;
+    }
+
+    /* ===== MODALE AIDE ===== */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-overlay.open { display: flex; }
+
+    .modal-box {
+      background: white;
+      border-radius: 14px;
+      padding: 28px 32px;
+      max-width: 620px;
+      width: 90%;
+      max-height: 85vh;
+      overflow-y: auto;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+      position: relative;
+    }
+
+    .modal-box h2 {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 1.3rem;
+      color: var(--bleu-marine);
+      margin-bottom: 16px;
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 16px;
+      right: 18px;
+      background: none;
+      border: none;
+      font-size: 1.4rem;
+      cursor: pointer;
+      color: #8099B4;
+    }
+
+    .type-legend {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .type-legend-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 10px;
+      border-radius: 8px;
+    }
+
+    .type-legend-item.PP { background: #F0FBF2; }
+    .type-legend-item.PA { background: #EBF4FF; }
+    .type-legend-item.CD { background: #FFFBEE; }
+    .type-legend-item.AD { background: #FFF1F2; }
+
+    .type-legend-item p {
+      font-size: 0.83rem;
+      line-height: 1.4;
+      color: #445;
+    }
+
+    /* ===== TOAST ===== */
+    .toast {
+      position: fixed;
+      bottom: 80px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--bleu-marine);
+      color: white;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      z-index: 9999;
+      opacity: 0;
+      transition: all 0.3s ease;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .toast.success { background: #1B7A3A; }
+    .toast.error { background: var(--rouge); }
+
+    /* ===== CHAMP DÉSACTIVÉ ===== */
+    input:disabled, select:disabled, textarea:disabled {
+      background: #F0F0F0 !important;
+      color: #AAA !important;
+      cursor: not-allowed;
+    }
+
+    /* ===== PRINT ===== */
+    @media print {
+      .action-bar, .btn-add-obs, .btn-del-obs, .btn-aide,
+      .no-print, input[type="file"] { display: none !important; }
+
+      body { background: white; }
+      .section { box-shadow: none; border: 1px solid #ddd; }
+      .header { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+      @page { size: A4 landscape; margin: 8mm; }
+
+      body { font-size: 11px; }
+    }
+
+    /* ===== RESPONSIVE MOBILE ===== */
+    @media (max-width: 600px) {
+      .header-inner { padding: 12px 16px; flex-wrap: wrap; gap: 10px; }
+      .header-logo img { height: 36px; }
+      .header-title h1 { font-size: 1.3rem; }
+      .main { padding: 14px 12px 80px; }
+      .section { padding: 16px 14px; }
+      .action-bar { padding: 12px 14px; bottom: 8px; }
+      .btn { padding: 9px 14px; font-size: 0.83rem; }
+      .col-domaine, .col-impact, .col-transv { display: none; }
+    }
+  </style>
 </head>
-
 <body>
-  <div class="container">
-    <img class="logo" src="CDES_Logo.png" alt="">
-    <h1> OBSERVATIONS HSE</h1>
-    <img class="regles" src="regles.png" alt="">
-  </div>
-  <div class="top-fields">
-    <label>Date:<input type="date" id="visite-date" value=""></label>
-    <label>Chantier:<input type="text" id="chantier" placeholder="Nom du chantier"></label>
-    <label>Activité:<input type="text" style="width: 300px;" id="visiteur" placeholder="Nom"></label>
-    <label>Conducteur de travaux:<input type="text" id="visiteur" placeholder="Nom / Fonction"></label>
-  </div>
-  <div>
 
-    <input type="file" id="photo-input-chantier" accept="image/* .png" multiple>
-    <div id="photo-container-chantier"></div>
-  </div>
-  <div class="counters">
-    <span>PP 👍: <span id="count-PP">0</span></span>
-    <span>PA 👍: <span id="count-PA">0</span></span>
-    <span>CD ⚠️: <span id="count-CD">0</span></span>
-    <span>AD 🚫: <span id="count-AD">0</span></span>
-    <button class="show-consignes" id="openModalBtn">?</button>
-<img 
-    src="fho.png"
-    id="openModalFhoBtn"
-    class="btn-image"
-    alt="Ouvrir FHO">
-  </div>
-  <table id="obs-table">
-    <thead>
-      <tr>
-        <th class="medium-row">Type</th>
-        <th class="large-row">Description</th>
-        <th class="large-row">Action</th>
-        <th class="medium-row">Échéance</th>
-        <th class="medium-row">Statut</th>
-        <th class="small-row no-print">Suppr.</th>
-      </tr>
-    </thead>
-    <tbody>
-      <!-- Lignes dynamiques ici -->
-    </tbody>
-  </table>
-  <div class="buttons">
-    <button class="add-row" onclick="addRow()">Ajouter une observation</button>
-  </div>
-
-  <input type="file" id="photo-input" accept="image/* .png" multiple>
-  <div id="photo-container"></div>
-
-  <div class="buttons">
-    <button class="export" onclick="print()"> Exporter en PDF</button>
-  </div>
-
-
-  <!-- Structure de la modale -->
-  <div id="imageModal" class="modal">
-    <div class="modal-content">
-      <h1> Informations générales</h1>
-      <ul>
-        <li> 3 étapes : Observer/Discuter/Se mettre d’accord </li>
-        <li> Pas de jugements, de réprimandes ou de mesures disciplinaires</li>
-        <li> Se concentrer sur les points positifs et les points à améliorer (3 PP pour 1 AD/CD)</li>
-        <li> Donner la priorité aux actions immédiates</li>
-        <li> Les actions doivent être convenues conjointement entre le visiteur et la personne rencontrée</li>
-        <li> Se concentrer sur les Règles qui Sauvent des vies </li>
-      </ul>
-      <ul>
-        <li style="color:green ;">PP : Point Positif</li>
-        <li style="color: blue ;">PA : Point d'amélioration</li>
-        <li style="color:red ;">AD : Acte Dangereux : téléphoner en conduisant, opération de travail sans EPI </li>
-        <li style="color:orange;">CD : Condition dangereuse : une consigne pas à jour, des trous dans le sol, absence de
-          balisage </li>
-      </ul>
-      <span class="close">&times;</span>
-    </div>
-  </div>
-    <div id="imageFhoModal" class="modal-fho">
-    <div class="modal-content-fho">
-      <table class="attestation no-print">
-  <tbody>
-    <tr>
-      <td>
-        <div class="contenu">
-
-          <!-- Image à gauche -->
-          <img src="fho.png" alt="">
-
-          <!-- Texte à droite -->
-          <div class="texte">
-            <p>
-              Pour réaliser une observation HSE pertinente, les situations
-              de travail doivent être analysées selon les Facteurs Humains
-              et Organisationnels (FHO).
-            </p>
-
-            <span class="titre">Exemples :</span>
-
-            <ul>
-              <li><b>Humain :</b> port des EPI, vigilance, respect des consignes</li>
-              <li><b>Matériel :</b> extincteur manquant, matériel défectueux</li>
-              <li><b>Organisationnel :</b> coactivité, préparation, communication</li>
-              <li><b>Environnemental :</b> pollution, stockage, propreté chantier</li>
-            </ul>
-          </div>
-
+  <!-- HEADER -->
+  <header class="header">
+    <div class="header-inner">
+      <div class="header-logo">
+        <img src="https://cdes.pro/wp-content/uploads/2019/12/logo-alt-1.svg" alt="CDES" onerror="this.style.display='none'" style="min-width:0;min-height:0;">
+        <div class="header-title">
+          <h1>OBSERVATIONS HSE</h1>
+          <p>Compte Rendu de Visite Terrain</p>
         </div>
-      </td>
-    </tr>
-  </tbody>
-</table>
-      <span class="close-fho">&times;</span>
+      </div>
+      <div class="header-cr">
+        <div class="cr-label">N° CR</div>
+        <div class="cr-value" id="cr-numero">—</div>
+      </div>
+    </div>
+  </header>
+
+  <main class="main">
+
+    <!-- SECTION 1 : INFORMATIONS CHANTIER -->
+    <div class="section">
+      <div class="section-title"><span class="dot"></span>Informations du chantier</div>
+      <div class="grid-4" style="margin-bottom:16px;">
+        <div class="field">
+          <label>Date de visite *</label>
+          <input type="date" id="date-visite">
+        </div>
+        <div class="field">
+          <label>Chantier *</label>
+          <input type="text" id="chantier" placeholder="Nom du chantier">
+        </div>
+        <div class="field">
+          <label>Activité</label>
+          <select id="activite">
+            <option value="">— Sélectionner —</option>
+            <option>Dragage</option>
+            <option>RCE</option>
+            <option>Arrachage</option>
+            <option>Restauration de berges</option>
+            <option>Faucardage</option>
+            <option>Fret Fluvial</option>
+            <option>Atelier</option>
+            <option>Bathymétrie / Topo</option>
+            <option>Equipements Portuaires</option>
+            <option>Dragage TEREOS</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Visiteur HSE</label>
+          <input type="text" id="visiteur" placeholder="Votre nom">
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="field">
+          <label>Conducteur de travaux / Responsable</label>
+          <select id="conducteur">
+            <option value="">— Sélectionner —</option>
+            <option>Rémy TRUEBA</option>
+            <option>Jaime DE ALMEIDA</option>
+            <option>Jordan DEPLEDT</option>
+            <option>Antoine NONNON</option>
+            <option>Ivan BAJURA</option>
+            <option>Anthony MORIN</option>
+            <option>Antoine GOURICHON</option>
+            <option>Maxime BOMBLE</option>
+            <option>Aurélien MOMEUX</option>
+            <option>Sébastien LE GLAS</option>
+            <option>Edouard DEGAIE</option>
+            <option>Daoud DAOUDI</option>
+            <option>Xavier MAUCOURANT</option>
+            <option>Vincent DADEN</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 2 : PHOTOS CHANTIER -->
+    <div class="section">
+      <div class="section-title"><span class="dot"></span>Photos du chantier</div>
+      <label class="photo-zone" for="photos-chantier-input">
+        <div class="icon">📷</div>
+        <p>Cliquez ou glissez des photos du chantier ici</p>
+        <input type="file" id="photos-chantier-input" accept="image/*" multiple style="display:none">
+      </label>
+      <div class="photos-preview" id="photos-chantier-preview"></div>
+    </div>
+
+    <!-- SECTION 3 : OBSERVATIONS -->
+    <div class="section">
+      <div class="section-title"><span class="dot"></span>Observations HSE</div>
+
+      <!-- COMPTEURS -->
+      <div class="compteurs">
+        <div class="compteur PP">PP 👍 <span class="count" id="count-PP">0</span></div>
+        <div class="compteur PA">PA 📋 <span class="count" id="count-PA">0</span></div>
+        <div class="compteur CD">CD ⚠️ <span class="count" id="count-CD">0</span></div>
+        <div class="compteur AD">AD 🚫 <span class="count" id="count-AD">0</span></div>
+        <button class="btn-aide no-print" onclick="document.getElementById('modal-aide').classList.add('open')">
+          ? Aide
+        </button>
+      </div>
+
+      <!-- TABLEAU -->
+      <div class="obs-table-wrapper">
+        <table class="obs-table" id="obs-table">
+          <thead>
+            <tr>
+              <th class="col-type">Type</th>
+              <th class="col-desc">Description</th>
+              <th class="col-action">Action corrective</th>
+              <th class="col-domaine">Domaine</th>
+              <th class="col-impact">Impact HSE</th>
+              <th class="col-transv">Transv.</th>
+              <th class="col-echeance">Échéance</th>
+              <th class="col-statut">Statut</th>
+              <th class="col-photo">Photo</th>
+              <th class="col-del no-print"></th>
+            </tr>
+          </thead>
+          <tbody id="obs-tbody"></tbody>
+        </table>
+      </div>
+
+      <button class="btn-add-obs no-print" onclick="ajouterObs()">
+        ＋ Ajouter une observation
+      </button>
+    </div>
+
+    <!-- BARRE D'ACTIONS -->
+    <div class="action-bar no-print">
+      <button class="btn btn-success" onclick="envoyerSharePoint()">
+        ☁️ Envoyer les données
+      </button>
+      <button class="btn btn-warning" onclick="exportExcel()">
+        📊 Exporter Excel
+      </button>
+      <button class="btn btn-primary" onclick="window.print()">
+        🖨️ Exporter PDF
+      </button>
+      <button class="btn btn-secondary" onclick="nouveauCR()">
+        📝 Nouveau CR
+      </button>
+    </div>
+
+  </main>
+
+  <!-- MODALE AIDE -->
+  <div class="modal-overlay" id="modal-aide">
+    <div class="modal-box">
+      <button class="modal-close" onclick="document.getElementById('modal-aide').classList.remove('open')">✕</button>
+      <h2>Guide des observations HSE</h2>
+      <p style="font-size:0.88rem;color:#556;line-height:1.5;margin-bottom:12px;">
+        3 étapes : Observer → Discuter → Se mettre d'accord.<br>
+        Pas de jugements ni de mesures disciplinaires. Règle : 3 PP pour 1 AD/CD.
+      </p>
+      <div class="type-legend">
+        <div class="type-legend-item PP">
+          <span class="type-badge type-PP">PP</span>
+          <p><strong>Point Positif</strong><br>Bonne pratique observée, comportement exemplaire, respect des consignes.</p>
+        </div>
+        <div class="type-legend-item PA">
+          <span class="type-badge type-PA">PA</span>
+          <p><strong>Point d'Amélioration</strong><br>Situation améliorable sans danger immédiat.</p>
+        </div>
+        <div class="type-legend-item CD">
+          <span class="type-badge type-CD">CD</span>
+          <p><strong>Condition Dangereuse</strong><br>Consigne non à jour, balisage absent, matériel défectueux.</p>
+        </div>
+        <div class="type-legend-item AD">
+          <span class="type-badge type-AD">AD</span>
+          <p><strong>Acte Dangereux</strong><br>Téléphone en conduisant, travail sans EPI, non-respect procédure.</p>
+        </div>
+      </div>
     </div>
   </div>
 
+  <!-- TOAST -->
+  <div class="toast" id="toast"></div>
 
+  <script>
+    // ========================================================
+    // CONFIGURATION WEBHOOK GOOGLE APPS SCRIPT
+    // ========================================================
+    const WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbxxveoZL1g2bziP1G8JrXZktagm7ylJx6TGc1zZq2gBAQ6EvQ4G5d-feR6tV_MmSXOu/exec';
 
-  <script src="index.js"> </script>
+    // ========================================================
+    // NUMÉROTATION AUTOMATIQUE
+    // ========================================================
+    function genererNumeroCR() {
+      const year = new Date().getFullYear();
+      const key = 'cr_counter_' + year;
+      let n = parseInt(localStorage.getItem(key) || '0') + 1;
+      localStorage.setItem(key, n);
+      return 'OBS-' + year + '-' + String(n).padStart(3, '0');
+    }
+
+    // ========================================================
+    // TOAST
+    // ========================================================
+    function toast(msg, type = '') {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.className = 'toast show ' + type;
+      setTimeout(() => { t.className = 'toast'; }, 3000);
+    }
+
+    // ========================================================
+    // COMPTEURS
+    // ========================================================
+    function majCompteurs() {
+      const rows = document.querySelectorAll('#obs-tbody tr');
+      let c = { PP: 0, PA: 0, CD: 0, AD: 0 };
+      rows.forEach(tr => {
+        const v = tr.querySelector('.sel-type').value;
+        if (c[v] !== undefined) c[v]++;
+      });
+      ['PP','PA','CD','AD'].forEach(t => {
+        document.getElementById('count-' + t).textContent = c[t];
+      });
+    }
+
+    // ========================================================
+    // GESTION LIGNE PP (désactiver champs action)
+    // ========================================================
+    function majLigneType(tr) {
+      const type = tr.querySelector('.sel-type').value;
+      const toDisable = tr.querySelectorAll('.can-disable');
+      if (type === 'PP') {
+        toDisable.forEach(el => { el.disabled = true; el.value = ''; });
+        tr.className = 'PP';
+      } else {
+        toDisable.forEach(el => { el.disabled = false; });
+        tr.className = type;
+      }
+      majCompteurs();
+    }
+
+    // ========================================================
+    // AJOUTER UNE OBSERVATION
+    // ========================================================
+    let obsCount = 0;
+
+    function ajouterObs(data = {}) {
+      obsCount++;
+      const tbody = document.getElementById('obs-tbody');
+      const tr = document.createElement('tr');
+      tr.className = data.type || 'PP';
+
+      tr.innerHTML = `
+        <td class="col-type">
+          <select class="sel-type" onchange="majLigneType(this.closest('tr'))">
+            <option value="PP" ${(data.type||'PP')==='PP'?'selected':''}>PP 👍</option>
+            <option value="PA" ${data.type==='PA'?'selected':''}>PA 📋</option>
+            <option value="CD" ${data.type==='CD'?'selected':''}>CD ⚠️</option>
+            <option value="AD" ${data.type==='AD'?'selected':''}>AD 🚫</option>
+          </select>
+        </td>
+        <td class="col-desc">
+          <textarea class="inp-desc" placeholder="Description de l'observation..." oninput="autoH(this)">${data.desc||''}</textarea>
+        </td>
+        <td class="col-action">
+          <textarea class="can-disable inp-action" placeholder="Action à mener..." oninput="autoH(this)">${data.action||''}</textarea>
+        </td>
+        <td class="col-domaine">
+          <select class="can-disable inp-domaine">
+            <option value="">—</option>
+            <option ${data.domaine==='Sécurité'?'selected':''}>Sécurité</option>
+            <option ${data.domaine==='Santé'?'selected':''}>Santé</option>
+            <option ${data.domaine==='Environnement'?'selected':''}>Environnement</option>
+            <option ${data.domaine==='Réglementaire'?'selected':''}>Réglementaire</option>
+          </select>
+        </td>
+        <td class="col-impact">
+          <select class="can-disable inp-impact">
+            <option value="">—</option>
+            <option ${data.impact==='Critique'?'selected':''}>Critique</option>
+            <option ${data.impact==='Fort'?'selected':''}>Fort</option>
+            <option ${data.impact==='Moyen'?'selected':''}>Moyen</option>
+            <option ${data.impact==='Faible'?'selected':''}>Faible</option>
+          </select>
+        </td>
+        <td class="col-transv">
+          <select class="can-disable inp-transv">
+            <option value="">—</option>
+            <option ${data.transv==='Oui'?'selected':''}>Oui</option>
+            <option ${data.transv==='Non'?'selected':''}>Non</option>
+          </select>
+        </td>
+        <td class="col-echeance">
+          <input type="date" class="can-disable inp-echeance" value="${data.echeance||''}">
+        </td>
+        <td class="col-statut">
+          <select class="can-disable inp-statut">
+            <option value="">—</option>
+            <option ${data.statut==='A planifier'?'selected':''}>A planifier</option>
+            <option ${data.statut==='En cours'?'selected':''}>En cours</option>
+            <option ${data.statut==='Clôturée'?'selected':''}>Clôturée</option>
+          </select>
+        </td>
+        <td class="col-photo">
+          <div class="obs-photo-cell">
+            <input type="file" accept="image/*" capture="environment" class="inp-photo" style="display:none" onchange="ajouterPhotoObs(this)">
+            <button class="obs-photo-btn no-print" onclick="this.previousElementSibling.click()">📷 Photo</button>
+            <div class="photo-preview-container"></div>
+          </div>
+        </td>
+        <td class="col-del no-print">
+          <button class="btn-del-obs" onclick="supprimerObs(this)" title="Supprimer">✕</button>
+        </td>
+      `;
+
+      tbody.appendChild(tr);
+      majLigneType(tr);
+
+      // Focus sur la description
+      tr.querySelector('.inp-desc').focus();
+    }
+
+    function supprimerObs(btn) {
+      btn.closest('tr').remove();
+      majCompteurs();
+    }
+
+    // Ajouter une photo à une observation
+    function ajouterPhotoObs(input) {
+      const file = input.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const cell = input.closest('.obs-photo-cell');
+        const container = cell.querySelector('.photo-preview-container');
+        const btn = cell.querySelector('.obs-photo-btn');
+
+        // Créer le preview
+        container.innerHTML = '';
+        const wrap = document.createElement('div');
+        wrap.className = 'obs-photo-preview';
+
+        const img = document.createElement('img');
+        img.src = e.target.result;
+        img.title = 'Cliquer pour voir';
+        img.onclick = () => {
+          const modal = document.createElement('div');
+          modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:99999;display:flex;align-items:center;justify-content:center;cursor:pointer';
+          const bigImg = document.createElement('img');
+          bigImg.src = e.target.result;
+          bigImg.style.cssText = 'max-width:95%;max-height:95%;border-radius:8px';
+          modal.appendChild(bigImg);
+          modal.onclick = () => modal.remove();
+          document.body.appendChild(modal);
+        };
+
+        const del = document.createElement('button');
+        del.className = 'photo-del-btn no-print';
+        del.textContent = '✕';
+        del.onclick = (ev) => {
+          ev.stopPropagation();
+          container.innerHTML = '';
+          btn.style.display = 'inline-block';
+          input.value = '';
+        };
+
+        wrap.appendChild(img);
+        wrap.appendChild(del);
+        container.appendChild(wrap);
+
+        btn.style.display = 'none';
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function autoH(el) {
+      el.style.height = 'auto';
+      el.style.height = el.scrollHeight + 'px';
+    }
+
+    // ========================================================
+    // COLLECTER LES DONNÉES DU FORMULAIRE
+    // ========================================================
+    function collecterDonnees() {
+      const crNum = document.getElementById('cr-numero').textContent;
+      const date = document.getElementById('date-visite').value;
+      const chantier = document.getElementById('chantier').value;
+      const activite = document.getElementById('activite').value;
+      const conducteur = document.getElementById('conducteur').value;
+      const visiteur = document.getElementById('visiteur').value;
+
+      const observations = [];
+      document.querySelectorAll('#obs-tbody tr').forEach((tr, i) => {
+        observations.push({
+          nCR: crNum,
+          dateVisite: date,
+          chantier: chantier,
+          activite: activite,
+          conducteur: conducteur,
+          visiteur: visiteur,
+          nObs: i + 1,
+          type: tr.querySelector('.sel-type').value,
+          description: tr.querySelector('.inp-desc').value,
+          action: tr.querySelector('.inp-action').value,
+          domaine: tr.querySelector('.inp-domaine').value,
+          impact: tr.querySelector('.inp-impact').value,
+          transversal: tr.querySelector('.inp-transv').value,
+          echeance: tr.querySelector('.inp-echeance').value,
+          statut: tr.querySelector('.inp-statut').value,
+        });
+      });
+
+      return { crNum, date, chantier, activite, conducteur, visiteur, observations };
+    }
+
+    // ========================================================
+    // ENVOI VERS SHAREPOINT
+    // ========================================================
+    async function envoyerSharePoint() {
+      const data = collecterDonnees();
+
+      if (!data.chantier.trim()) {
+        toast('Veuillez renseigner le nom du chantier', 'error');
+        return;
+      }
+
+      if (data.observations.length === 0) {
+        toast('Ajoutez au moins une observation', 'error');
+        return;
+      }
+
+      const btn = document.querySelector('.btn-success');
+      btn.innerHTML = '⏳ Envoi en cours...';
+      btn.disabled = true;
+
+      let errors = 0;
+      let success = 0;
+
+      for (const obs of data.observations) {
+        try {
+          const payload = {
+            nCR: data.crNum,
+            dateVisite: data.date,
+            chantier: data.chantier,
+            activite: data.activite,
+            conducteur: data.conducteur,
+            visiteur: data.visiteur,
+            type: obs.type,
+            description: obs.description,
+            action: obs.action,
+            domaine: obs.domaine,
+            impact: obs.impact,
+            transversal: obs.transversal,
+            echeance: obs.echeance,
+            statut: obs.statut
+          };
+
+          const resp = await fetch(WEBHOOK_URL, {
+            method: 'POST',
+            body: JSON.stringify(payload),
+            redirect: 'follow'
+          });
+
+          if (resp.ok) { success++; }
+          else { errors++; console.error('Erreur obs', obs.nObs, resp.status); }
+
+        } catch (e) {
+          errors++;
+          console.error('Erreur réseau', e);
+        }
+      }
+
+      if (errors === 0) {
+        toast('✅ ' + success + ' observation(s) envoyée(s) ✓', 'success');
+      } else if (success > 0) {
+        toast('⚠️ ' + success + ' envoyées, ' + errors + ' erreur(s)', 'error');
+      } else {
+        toast('❌ Erreur d\'envoi. Vérifiez votre connexion.', 'error');
+      }
+
+      btn.innerHTML = '☁️ Envoyer les données';
+      btn.disabled = false;
+    }
+
+    // ========================================================
+    // EXPORT EXCEL
+    // ========================================================
+    function exportExcel() {
+      const data = collecterDonnees();
+      const rows = [['N° CR', 'Date', 'Chantier', 'Activité', 'Conducteur', 'N° Obs', 'Type', 'Description', 'Action corrective', 'Domaine', 'Impact HSE', 'Transversal', 'Échéance', 'Statut']];
+      data.observations.forEach(o => {
+        rows.push([o.nCR, o.dateVisite, o.chantier, o.activite, o.conducteur, o.nObs, o.type, o.description, o.action, o.domaine, o.impact, o.transversal, o.echeance, o.statut]);
+      });
+      const ws = XLSX.utils.aoa_to_sheet(rows);
+      ws['!cols'] = [14,12,22,18,20,6,6,45,45,14,12,10,12,12].map(w => ({wch:w}));
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Observations');
+      XLSX.writeFile(wb, (data.crNum || 'CR_HSE') + '_' + (data.chantier || 'export').replace(/[^a-zA-Z0-9]/g,'_') + '.xlsx');
+    }
+
+    // ========================================================
+    // NOUVEAU CR
+    // ========================================================
+    function nouveauCR() {
+      if (!confirm('Créer un nouveau CR ? Les données non envoyées seront perdues.')) return;
+      document.getElementById('cr-numero').textContent = genererNumeroCR();
+      document.getElementById('date-visite').valueAsDate = new Date();
+      document.getElementById('chantier').value = '';
+      document.getElementById('activite').value = '';
+      document.getElementById('conducteur').value = '';
+      document.getElementById('visiteur').value = '';
+      document.getElementById('obs-tbody').innerHTML = '';
+      document.getElementById('photos-chantier-preview').innerHTML = '';
+      majCompteurs();
+      ajouterObs();
+    }
+
+    // ========================================================
+    // PHOTOS CHANTIER
+    // ========================================================
+    document.getElementById('photos-chantier-input').addEventListener('change', function() {
+      const preview = document.getElementById('photos-chantier-preview');
+      Array.from(this.files).forEach(file => {
+        const reader = new FileReader();
+        reader.onload = e => {
+          const wrap = document.createElement('div');
+          wrap.className = 'photo-thumb';
+          const img = document.createElement('img');
+          img.src = e.target.result;
+          const btn = document.createElement('button');
+          btn.className = 'del-photo no-print';
+          btn.textContent = '✕';
+          btn.onclick = () => wrap.remove();
+          wrap.appendChild(img);
+          wrap.appendChild(btn);
+          preview.appendChild(wrap);
+        };
+        reader.readAsDataURL(file);
+      });
+      this.value = '';
+    });
+
+    // ========================================================
+    // FERMER MODAL EN CLIQUANT DEHORS
+    // ========================================================
+    document.getElementById('modal-aide').addEventListener('click', function(e) {
+      if (e.target === this) this.classList.remove('open');
+    });
+
+    // ========================================================
+    // INITIALISATION
+    // ========================================================
+    document.getElementById('cr-numero').textContent = genererNumeroCR();
+    document.getElementById('date-visite').valueAsDate = new Date();
+    ajouterObs();
+  </script>
 </body>
-
 </html>
