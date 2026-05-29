@@ -405,7 +405,77 @@
     .col-transv { width: 65px; }
     .col-echeance { width: 115px; }
     .col-statut { width: 110px; }
+    .col-photo { width: 90px; }
     .col-del { width: 42px; }
+
+    /* Cellule photo dans le tableau */
+    .obs-photo-cell {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .obs-photo-btn {
+      background: var(--bleu-pale);
+      border: 1.5px dashed var(--bleu-accent);
+      color: var(--bleu-clair);
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 0.78rem;
+      cursor: pointer;
+      font-weight: 600;
+      white-space: nowrap;
+      transition: all 0.15s;
+    }
+
+    .obs-photo-btn:hover {
+      background: var(--bleu-clair);
+      color: white;
+    }
+
+    .obs-photo-preview {
+      position: relative;
+      display: inline-block;
+    }
+
+    .obs-photo-preview img {
+      width: 70px;
+      height: 50px;
+      object-fit: cover;
+      border-radius: 5px;
+      border: 1.5px solid var(--gris-bord);
+      cursor: pointer;
+    }
+
+    .obs-photo-preview .photo-del-btn {
+      position: absolute;
+      top: -6px;
+      right: -6px;
+      background: var(--rouge);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 18px;
+      height: 18px;
+      font-size: 10px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+      padding: 0;
+    }
+
+    /* Pour l'impression : grandes images */
+    @media print {
+      .obs-photo-preview img {
+        width: 120px;
+        height: 90px;
+      }
+      .obs-photo-btn { display: none !important; }
+      .photo-del-btn { display: none !important; }
+    }
 
     .btn-del-obs {
       background: none;
@@ -769,6 +839,7 @@
               <th class="col-transv">Transv.</th>
               <th class="col-echeance">Échéance</th>
               <th class="col-statut">Statut</th>
+              <th class="col-photo">Photo</th>
               <th class="col-del no-print"></th>
             </tr>
           </thead>
@@ -952,6 +1023,13 @@
             <option ${data.statut==='Clôturée'?'selected':''}>Clôturée</option>
           </select>
         </td>
+        <td class="col-photo">
+          <div class="obs-photo-cell">
+            <input type="file" accept="image/*" capture="environment" class="inp-photo" style="display:none" onchange="ajouterPhotoObs(this)">
+            <button class="obs-photo-btn no-print" onclick="this.previousElementSibling.click()">📷 Photo</button>
+            <div class="photo-preview-container"></div>
+          </div>
+        </td>
         <td class="col-del no-print">
           <button class="btn-del-obs" onclick="supprimerObs(this)" title="Supprimer">✕</button>
         </td>
@@ -967,6 +1045,55 @@
     function supprimerObs(btn) {
       btn.closest('tr').remove();
       majCompteurs();
+    }
+
+    // Ajouter une photo à une observation
+    function ajouterPhotoObs(input) {
+      const file = input.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const cell = input.closest('.obs-photo-cell');
+        const container = cell.querySelector('.photo-preview-container');
+        const btn = cell.querySelector('.obs-photo-btn');
+
+        // Créer le preview
+        container.innerHTML = '';
+        const wrap = document.createElement('div');
+        wrap.className = 'obs-photo-preview';
+
+        const img = document.createElement('img');
+        img.src = e.target.result;
+        img.title = 'Cliquer pour voir';
+        img.onclick = () => {
+          const modal = document.createElement('div');
+          modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:99999;display:flex;align-items:center;justify-content:center;cursor:pointer';
+          const bigImg = document.createElement('img');
+          bigImg.src = e.target.result;
+          bigImg.style.cssText = 'max-width:95%;max-height:95%;border-radius:8px';
+          modal.appendChild(bigImg);
+          modal.onclick = () => modal.remove();
+          document.body.appendChild(modal);
+        };
+
+        const del = document.createElement('button');
+        del.className = 'photo-del-btn no-print';
+        del.textContent = '✕';
+        del.onclick = (ev) => {
+          ev.stopPropagation();
+          container.innerHTML = '';
+          btn.style.display = 'inline-block';
+          input.value = '';
+        };
+
+        wrap.appendChild(img);
+        wrap.appendChild(del);
+        container.appendChild(wrap);
+
+        btn.style.display = 'none';
+      };
+      reader.readAsDataURL(file);
     }
 
     function autoH(el) {
