@@ -52,9 +52,9 @@
     }
 
     .header-inner {
-      display: grid;
-      grid-template-columns: 1fr 2fr 1fr;
+      display: flex;
       align-items: center;
+      justify-content: space-between;
       padding: 16px 28px;
       position: relative;
       z-index: 1;
@@ -65,7 +65,7 @@
       display: flex;
       align-items: center;
       gap: 14px;
-      justify-self: start;
+      z-index: 2;
     }
 
     .header-logo img {
@@ -76,7 +76,12 @@
     .header-title {
       color: white;
       text-align: center;
-      justify-self: center;
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 1;
+      pointer-events: none;
     }
 
     .header-title h1 {
@@ -103,7 +108,7 @@
       padding: 8px 16px;
       color: white;
       text-align: right;
-      justify-self: end;
+      z-index: 2;
     }
 
     .header-cr .cr-label {
@@ -234,54 +239,46 @@
     }
 
     /* ===== PHOTOS CHANTIER ===== */
-    .photo-zone {
-      border: 2px dashed var(--gris-bord);
-      border-radius: 8px;
-      padding: 10px 16px;
-      text-align: center;
+    .btn-photo-add {
+      margin-left: auto;
+      background: var(--bleu-clair);
+      color: white;
+      border: none;
+      padding: 6px 14px;
+      border-radius: 6px;
       cursor: pointer;
-      transition: all 0.2s;
-      background: var(--gris-clair);
-      display: flex;
+      font-size: 0.82rem;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+      transition: background 0.2s;
+      display: inline-flex;
       align-items: center;
-      justify-content: center;
-      gap: 10px;
-      width: 100%;
+      gap: 6px;
     }
 
-    .photo-zone:hover {
-      border-color: var(--bleu-accent);
-      background: var(--bleu-pale);
-    }
-
-    .photo-zone p {
-      color: #8099B4;
-      font-size: 0.85rem;
-      margin: 0;
-    }
-
-    .photo-zone .icon {
-      font-size: 1.4rem;
+    .btn-photo-add:hover {
+      background: var(--bleu-marine);
     }
 
     .photos-preview {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
-      margin-top: 14px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 14px;
+      margin-top: 0;
     }
 
     .photo-thumb {
       position: relative;
-      display: inline-block;
+      width: 100%;
     }
 
     .photo-thumb img {
-      width: 220px;
-      height: 160px;
+      width: 100%;
+      height: 220px;
       object-fit: cover;
       border-radius: 8px;
       border: 2px solid var(--gris-bord);
+      display: block;
     }
 
     .photo-thumb .del-photo {
@@ -292,14 +289,15 @@
       color: white;
       border: none;
       border-radius: 50%;
-      width: 24px;
-      height: 24px;
-      font-size: 13px;
+      width: 26px;
+      height: 26px;
+      font-size: 14px;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
       line-height: 1;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
     }
 
     /* ===== COMPTEURS ===== */
@@ -415,7 +413,7 @@
     .col-transv { width: 65px; }
     .col-echeance { width: 115px; }
     .col-statut { width: 110px; }
-    .col-photo { width: 90px; }
+    .col-photo { width: 160px; }
     .col-del { width: 42px; }
 
     /* Cellule photo dans le tableau */
@@ -450,8 +448,8 @@
     }
 
     .obs-photo-preview img {
-      width: 80px;
-      height: 60px;
+      width: 140px;
+      height: 100px;
       object-fit: cover;
       border-radius: 5px;
       border: 1.5px solid var(--gris-bord);
@@ -480,15 +478,15 @@
     /* Pour l'impression : grandes images */
     @media print {
       .obs-photo-preview img {
-        width: 180px;
-        height: 135px;
+        width: 220px;
+        height: 165px;
       }
       .photo-thumb img {
-        width: 280px;
-        height: 200px;
+        height: 280px;
       }
       .obs-photo-btn { display: none !important; }
       .photo-del-btn { display: none !important; }
+      .btn-photo-add { display: none !important; }
     }
 
     .btn-del-obs {
@@ -724,17 +722,22 @@
     }
 
     /* ===== RESPONSIVE MOBILE ===== */
-    @media (max-width: 600px) {
-      .header-inner {
-        grid-template-columns: 1fr;
-        gap: 10px;
-        text-align: center;
+    @media (max-width: 700px) {
+      .header-title {
+        position: static;
+        transform: none;
+        order: -1;
       }
-      .header-logo, .header-cr {
-        justify-self: center;
+      .header-inner {
+        flex-direction: column;
+        gap: 12px;
+        text-align: center;
       }
       .header-logo img { height: 42px; }
       .header-title h1 { font-size: 1.4rem; }
+    }
+
+    @media (max-width: 600px) {
       .main { padding: 14px 12px 80px; }
       .section { padding: 16px 14px; }
       .action-bar { padding: 12px 14px; bottom: 8px; }
@@ -822,12 +825,13 @@
 
     <!-- SECTION 2 : PHOTOS CHANTIER -->
     <div class="section">
-      <div class="section-title"><span class="dot"></span>Photos du chantier</div>
-      <label class="photo-zone" for="photos-chantier-input">
-        <span class="icon">📷</span>
-        <p>Ajouter des photos du chantier</p>
-        <input type="file" id="photos-chantier-input" accept="image/*" multiple style="display:none">
-      </label>
+      <div class="section-title">
+        <span class="dot"></span>Photos du chantier
+        <label class="btn-photo-add no-print" for="photos-chantier-input">
+          📷 Ajouter
+          <input type="file" id="photos-chantier-input" accept="image/*" multiple style="display:none">
+        </label>
+      </div>
       <div class="photos-preview" id="photos-chantier-preview"></div>
     </div>
 
