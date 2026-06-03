@@ -712,13 +712,88 @@
       .action-bar, .btn-add-obs, .btn-del-obs, .btn-aide,
       .no-print, input[type="file"] { display: none !important; }
 
-      body { background: white; }
+      body { background: white; font-size: 11px; }
       .section { box-shadow: none; border: 1px solid #ddd; }
-      .header { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+      /* Forcer l'impression des couleurs sur tous les éléments */
+      * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        color-adjust: exact !important;
+      }
+
+      /* Header dégradé */
+      .header {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      /* Bandeau section-title avec puce */
+      .section-title {
+        background: white;
+        color: var(--bleu-marine) !important;
+      }
+
+      .section-title .dot {
+        background: var(--bleu-accent) !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        display: inline-block !important;
+        width: 8px !important;
+        height: 8px !important;
+        border-radius: 50% !important;
+        background-color: #00B4D8 !important;
+      }
+
+      /* Fonds colorés des lignes par type */
+      .obs-table tr.PP td {
+        background-color: #F0FBF2 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      .obs-table tr.PA td {
+        background-color: #EBF4FF !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      .obs-table tr.CD td {
+        background-color: #FFFBEE !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      .obs-table tr.AD td {
+        background-color: #FFF1F2 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      /* En-tête tableau bleu marine */
+      .obs-table th {
+        background-color: #003A6E !important;
+        color: white !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      /* Compteurs PP/PA/CD/AD */
+      .compteur.PP { background-color: #D4EDDA !important; color: #155724 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .compteur.PA { background-color: #CCE5FF !important; color: #004085 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .compteur.CD { background-color: #FFF3CD !important; color: #856404 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .compteur.AD { background-color: #F8D7DA !important; color: #721C24 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+      /* Badges type PP/PA/CD/AD */
+      .type-badge { display: none; }
+
+      /* Afficher le texte du select type directement */
+      .sel-type {
+        font-weight: 700;
+        font-size: 0.85rem;
+        border: none;
+        background: transparent !important;
+        padding: 0;
+      }
 
       @page { size: A4 landscape; margin: 8mm; }
-
-      body { font-size: 11px; }
     }
 
     /* ===== RESPONSIVE MOBILE ===== */
