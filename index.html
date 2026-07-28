@@ -743,6 +743,14 @@
 
   <main class="main">
 
+    <!-- SÉLECTEUR DE CR EN BROUILLON (multi-CR) -->
+    <div class="cr-switch no-print">
+      <label for="cr-select">📂 CR en cours :</label>
+      <select id="cr-select" onchange="chargerBrouillonId(this.value)"></select>
+      <button class="cr-btn" onclick="nouveauCR()" title="Ouvrir un nouveau CR (celui-ci reste en brouillon)">＋ Nouveau</button>
+      <button class="cr-btn cr-btn-del" onclick="supprimerCRCourant()" title="Supprimer ce CR du brouillon">🗑</button>
+    </div>
+
     <!-- SECTION 1 : INFORMATIONS CHANTIER -->
     <div class="section">
       <div class="section-title"><span class="dot"></span>Informations du chantier</div>
@@ -773,7 +781,7 @@
         </div>
         <div class="field">
           <label>Visiteur HSE</label>
-          <input type="text" id="visiteur" placeholder="Votre nom">
+          <input type="text" id="visiteur" value="Justin HERVELIN" readonly style="background:#f1f5f8;color:#456;cursor:default">
         </div>
       </div>
       <div class="grid-2">
@@ -783,8 +791,10 @@
             <option value="">— Sélectionner —</option>
             <option>Rémy TRUEBA</option>
             <option>Jaime DE ALMEIDA</option>
+            <option>Evan DENEUCHATEL</option>
             <option>Jordan DEPLEDT</option>
             <option>Antoine NONNON</option>
+            <option>Jérôme POINSOT</option>
             <option>Ivan BAJURA</option>
             <option>Anthony MORIN</option>
             <option>Antoine GOURICHON</option>
@@ -795,6 +805,7 @@
             <option>Daoud DAOUDI</option>
             <option>Xavier MAUCOURANT</option>
             <option>Vincent DADEN</option>
+            <option>Arthur VILLEMINOT</option>
           </select>
         </div>
       </div>
@@ -853,9 +864,13 @@
     </div>
 
     <!-- BARRE D'ACTIONS -->
+    <div class="brouillon-info no-print" id="brouillon-info">💾 Brouillon local : rien ne part au PA tant que tu ne cliques pas « Sauvegarder les données »</div>
     <div class="action-bar no-print">
+      <button class="btn btn-primary" onclick="voOpen()" style="background:#17232e">
+        🚗 Mode voiture
+      </button>
       <button class="btn btn-success" onclick="envoyerSharePoint()">
-        ☁️ Envoyer les données
+        ☁️ Sauvegarder les données (PA)
       </button>
       <button class="btn btn-warning" onclick="exportExcel()">
         📊 Exporter Excel
@@ -899,6 +914,75 @@
       </div>
     </div>
   </div>
+
+  <!-- MODE VOITURE (dictée mains libres) -->
+  <div class="vo-overlay" id="vo-overlay">
+    <button class="vo-close" id="vo-close" title="Quitter" onclick="voClose()">✕</button>
+    <div class="vo-title">🚗 Mode voiture — CR HSE</div>
+    <div class="vo-status" id="vo-status">Je t'écoute…</div>
+    <div class="vo-transcript" id="vo-transcript"></div>
+    <button class="vo-mic" id="vo-mic" onclick="voMicTap()">🎤</button>
+    <div class="vo-result hidden" id="vo-result"></div>
+    <div class="vo-hint">« <b>Ajoute</b> un point positif : port des EPI » · « Ajoute une condition dangereuse : plan de prévention non signé »<br>
+    « <b>Annule</b> le non-port des EPI » supprime la ligne correspondante.<br>
+    « <b>Nouveau CR</b> chantier Canal de la Sambre » ouvre un 2ᵉ CR — le précédent reste en brouillon, tu les termineras au bureau (photos comprises).<br>
+    L'IA reformule proprement et range dans la bonne catégorie. Rien ne part au PA sans le bouton Sauvegarder. Un appui sur le micro = pause.</div>
+  </div>
+
+  <style>
+    /* ===== Mode voiture & brouillon (ajouts) ===== */
+    .brouillon-info { text-align: center; font-size: 12px; color: #5f7180; margin: 14px 0 -6px; }
+    .cr-switch {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      background: #fff; border: 1px solid #dde3e8; border-left: 4px solid #2196F3;
+      border-radius: 10px; padding: 10px 14px; margin-bottom: 16px;
+      box-shadow: 0 1px 3px rgba(20,40,60,.08);
+    }
+    .cr-switch label { font-weight: bold; font-size: 13px; color: #1565C0; white-space: nowrap; }
+    .cr-switch select {
+      flex: 1; min-width: 180px; font-family: inherit; font-size: 13px;
+      padding: 8px 10px; border: 1px solid #d7e0e8; border-radius: 8px; background: #fff;
+    }
+    .cr-btn {
+      font-family: inherit; font-size: 13px; font-weight: bold; cursor: pointer;
+      border: 1px solid #d7e0e8; background: #eaf6fd; color: #1565C0;
+      border-radius: 8px; padding: 8px 12px;
+    }
+    .cr-btn-del { background: #fdecea; color: #d32f2f; }
+    .hidden { display: none !important; }
+    .vo-overlay {
+      position: fixed; inset: 0; z-index: 300;
+      background: linear-gradient(180deg, #17232e 0%, #133654 100%);
+      display: none; flex-direction: column; align-items: center; justify-content: center;
+      gap: 22px; padding: 24px; text-align: center;
+    }
+    .vo-overlay.open { display: flex; }
+    .vo-close {
+      position: absolute; top: 16px; right: 16px;
+      background: rgba(255,255,255,.14); border: none; color: #fff;
+      font-size: 20px; width: 46px; height: 46px; border-radius: 50%; cursor: pointer;
+    }
+    .vo-title { color: rgb(116, 204, 239); font-size: 14px; letter-spacing: 2.5px; text-transform: uppercase; font-weight: bold; }
+    .vo-status { color: #fff; font-size: 21px; font-weight: bold; min-height: 30px; }
+    .vo-transcript { color: #cfe7f5; font-size: 17px; min-height: 50px; max-width: 640px; line-height: 1.5; }
+    .vo-mic {
+      width: 132px; height: 132px; border-radius: 50%; border: none;
+      background: #2196F3; color: #fff; font-size: 54px; cursor: pointer;
+      box-shadow: 0 8px 40px rgba(33, 150, 243, .45);
+    }
+    .vo-mic.ecoute { background: #d32f2f; animation: vopulse 1.2s infinite; }
+    .vo-mic:disabled { opacity: .5; }
+    @keyframes vopulse {
+      0% { box-shadow: 0 0 0 0 rgba(211, 47, 47, .55); }
+      70% { box-shadow: 0 0 0 26px rgba(211, 47, 47, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(211, 47, 47, 0); }
+    }
+    .vo-result {
+      background: rgba(255,255,255,.1); border: 1px solid rgba(116, 204, 239, .45);
+      border-radius: 14px; padding: 14px 20px; color: #fff; font-size: 15px; max-width: 640px; line-height: 1.5;
+    }
+    .vo-hint { color: #9fb8c8; font-size: 12.5px; max-width: 560px; line-height: 1.6; }
+  </style>
 
   <!-- TOAST -->
   <div class="toast" id="toast"></div>
@@ -966,7 +1050,7 @@
     // ========================================================
     let obsCount = 0;
 
-    function ajouterObs(data = {}) {
+    function ajouterObs(data = {}, focus = true) {
       obsCount++;
       const tbody = document.getElementById('obs-tbody');
       const tr = document.createElement('tr');
@@ -1038,13 +1122,15 @@
       tbody.appendChild(tr);
       majLigneType(tr);
 
-      // Focus sur la description
-      tr.querySelector('.inp-desc').focus();
+      // Focus sur la description (pas en mode vocal : éviter le clavier)
+      if (focus) tr.querySelector('.inp-desc').focus();
+      sauverBrouillon();
     }
 
     function supprimerObs(btn) {
       btn.closest('tr').remove();
       majCompteurs();
+      sauverBrouillon();
     }
 
     // Ajouter une photo à une observation
@@ -1194,7 +1280,11 @@
       }
 
       if (errors === 0) {
-        toast('✅ ' + success + ' observation(s) envoyée(s) ✓', 'success');
+        toast('✅ ' + success + ' observation(s) sauvegardée(s) au PA ✓', 'success');
+        // marquer ce CR comme envoyé (✓ dans le sélecteur) — il reste consultable/imprimable
+        const l = brListe();
+        const b = l.find(x => x.id === brCourantId);
+        if (b) { b.envoye = true; b.majLe = new Date().toISOString(); brEcrireListe(l); majCrSelect(); }
       } else if (success > 0) {
         toast('⚠️ ' + success + ' envoyées, ' + errors + ' erreur(s)', 'error');
       } else {
@@ -1225,17 +1315,9 @@
     // NOUVEAU CR
     // ========================================================
     function nouveauCR() {
-      if (!confirm('Créer un nouveau CR ? Les données non envoyées seront perdues.')) return;
-      document.getElementById('cr-numero').textContent = genererNumeroCR();
-      document.getElementById('date-visite').valueAsDate = new Date();
-      document.getElementById('chantier').value = '';
-      document.getElementById('activite').value = '';
-      document.getElementById('conducteur').value = '';
-      document.getElementById('visiteur').value = '';
-      document.getElementById('obs-tbody').innerHTML = '';
-      document.getElementById('photos-chantier-preview').innerHTML = '';
-      majCompteurs();
-      ajouterObs();
+      if (!confirm('Ouvrir un nouveau CR ?\n\nLe CR affiché reste sauvegardé en brouillon — tu pourras y revenir à tout moment via le sélecteur « 📂 CR en cours ».')) return;
+      const b = nouveauBrouillon();
+      toast('📝 Nouveau CR ouvert : ' + b.crNum, 'success');
     }
 
     // ========================================================
@@ -1271,11 +1353,355 @@
     });
 
     // ========================================================
-    // INITIALISATION
+    // BROUILLONS MULTI-CR — plusieurs CR en parallèle (voiture → bureau),
+    // rien ne part au PA sans le bouton Sauvegarder
     // ========================================================
-    document.getElementById('cr-numero').textContent = genererNumeroCR();
-    document.getElementById('date-visite').valueAsDate = new Date();
-    ajouterObs();
+    const BR_LISTE_KEY = 'crhse_brouillons_v2';
+    const BR_COURANT_KEY = 'crhse_brouillon_courant';
+    let brTimer = null, brPret = false, brCourantId = null;
+
+    function brListe() { try { return JSON.parse(localStorage.getItem(BR_LISTE_KEY)) || []; } catch (e) { return []; } }
+    function brEcrireListe(l) { try { localStorage.setItem(BR_LISTE_KEY, JSON.stringify(l)); } catch (e) {} }
+    function brUid() { return 'cr' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+    function dateISO() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+
+    function lireLignes() {
+      return Array.from(document.querySelectorAll('#obs-tbody tr')).map(tr => ({
+        type: tr.querySelector('.sel-type').value,
+        desc: tr.querySelector('.inp-desc').value,
+        action: tr.querySelector('.inp-action').value,
+        domaine: tr.querySelector('.inp-domaine').value,
+        impact: tr.querySelector('.inp-impact').value,
+        transv: tr.querySelector('.inp-transv').value,
+        echeance: tr.querySelector('.inp-echeance').value,
+        statut: tr.querySelector('.inp-statut').value
+      }));
+    }
+
+    function formVersBrouillon(existant) {
+      return {
+        id: brCourantId,
+        crNum: document.getElementById('cr-numero').textContent,
+        date: document.getElementById('date-visite').value,
+        chantier: document.getElementById('chantier').value,
+        activite: document.getElementById('activite').value,
+        conducteur: document.getElementById('conducteur').value,
+        observations: lireLignes(),
+        envoye: existant ? !!existant.envoye : false,
+        majLe: new Date().toISOString()
+      };
+    }
+
+    function flushBrouillon() {
+      if (!brPret || !brCourantId) return;
+      clearTimeout(brTimer);
+      const l = brListe();
+      const i = l.findIndex(x => x.id === brCourantId);
+      const b = formVersBrouillon(i >= 0 ? l[i] : null);
+      if (i >= 0) l[i] = b; else l.push(b);
+      brEcrireListe(l);
+      try { localStorage.setItem(BR_COURANT_KEY, brCourantId); } catch (e) {}
+      majCrSelect();
+      const h = new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+      document.getElementById('brouillon-info').textContent =
+        '💾 ' + l.length + ' CR en brouillon · enregistré à ' + h + ' — rien ne part au PA sans « Sauvegarder les données »';
+    }
+
+    function sauverBrouillon() {
+      if (!brPret || !brCourantId) return;
+      clearTimeout(brTimer);
+      brTimer = setTimeout(flushBrouillon, 600);
+    }
+
+    function remplirFormulaire(b) {
+      brPret = false;
+      brCourantId = b.id;
+      document.getElementById('cr-numero').textContent = b.crNum || genererNumeroCR();
+      document.getElementById('date-visite').value = b.date || dateISO();
+      document.getElementById('chantier').value = b.chantier || '';
+      document.getElementById('activite').value = b.activite || '';
+      document.getElementById('conducteur').value = b.conducteur || '';
+      document.getElementById('visiteur').value = 'Justin HERVELIN';
+      document.getElementById('obs-tbody').innerHTML = '';
+      document.getElementById('photos-chantier-preview').innerHTML = '';
+      (b.observations || []).forEach(o => ajouterObs(o, false));
+      if (!(b.observations || []).length) ajouterObs({}, false);
+      majCompteurs();
+      try { localStorage.setItem(BR_COURANT_KEY, brCourantId); } catch (e) {}
+      brPret = true;
+      majCrSelect();
+    }
+
+    function majCrSelect() {
+      const sel = document.getElementById('cr-select');
+      const l = brListe().slice().sort((a, b) => (b.majLe || '').localeCompare(a.majLe || ''));
+      sel.innerHTML = l.map(b => {
+        const nb = (b.observations || []).filter(o => (o.desc || '').trim()).length;
+        return '<option value="' + b.id + '"' + (b.id === brCourantId ? ' selected' : '') + '>' +
+          (b.envoye ? '✓ ' : '') + (b.crNum || '?') + ' · ' + (b.chantier || 'sans chantier') + ' (' + nb + ' obs)</option>';
+      }).join('');
+    }
+
+    function chargerBrouillonId(id) {
+      if (id === brCourantId) return;
+      flushBrouillon(); // le CR affiché est mis de côté proprement
+      const b = brListe().find(x => x.id === id);
+      if (b) {
+        remplirFormulaire(b);
+        toast('📂 ' + (b.crNum || 'CR') + (b.chantier ? ' — ' + b.chantier : '') + ' chargé (photos non conservées en brouillon)', 'success');
+      }
+    }
+
+    function nouveauBrouillon(chantier) {
+      flushBrouillon();
+      const b = {
+        id: brUid(), crNum: genererNumeroCR(), date: dateISO(),
+        chantier: chantier || '', activite: '', conducteur: '',
+        observations: [], envoye: false, majLe: new Date().toISOString()
+      };
+      const l = brListe();
+      l.push(b);
+      brEcrireListe(l);
+      remplirFormulaire(b);
+      return b;
+    }
+
+    function supprimerCRCourant() {
+      const l = brListe();
+      const b = l.find(x => x.id === brCourantId);
+      if (!confirm('Supprimer ce CR du brouillon ?\n\n' + (b ? (b.crNum + (b.chantier ? ' — ' + b.chantier : '')) : '') +
+        (b && b.envoye ? '\n(déjà sauvegardé au PA ✓)' : '\n⚠ Il n\'a PAS été sauvegardé au PA.'))) return;
+      const reste = l.filter(x => x.id !== brCourantId);
+      brEcrireListe(reste);
+      brCourantId = null;
+      if (reste.length) remplirFormulaire(reste.sort((a, c) => (c.majLe || '').localeCompare(a.majLe || ''))[0]);
+      else nouveauBrouillon();
+      toast('🗑 CR retiré du brouillon');
+    }
+
+    // toute frappe ou changement dans la page alimente le brouillon
+    document.querySelector('main').addEventListener('input', sauverBrouillon);
+    document.querySelector('main').addEventListener('change', sauverBrouillon);
+
+    // ========================================================
+    // MODE VOITURE — dictée mains libres (même moteur que le Planning HSE)
+    // IA : Web App du Planning (mode 'crobs') — reformulation + rangement
+    // ========================================================
+    const IA_ENDPOINT = 'https://script.google.com/macros/s/AKfycbxukdaD_eV6-XWoWiXvO_v8Yq8nSdNjcFMULJZo3EnRgE8BiZm1amkib5SJVTDJ3loS/exec';
+    const CRO_ADD = /\bajoute\w*\b/i;
+    const CRO_DEL = /\b(annule\w*|supprime\w*|retire\w*|enl[eè]ve\w*)\b/i;
+    const CRO_NEW = /\bnouveau\s+(cr|c\.r\.|compte[- ]?rendu)\b/i;
+    const CRO_SILENCE = 1500;
+    const TYPE_LIBELLE = { PP: 'point positif', PA: 'point d\'amélioration', CD: 'condition dangereuse', AD: 'acte dangereux' };
+
+    let voRec = null, voBusy = false, voContinu = false, voPause = false, voWakeLock = null;
+
+    function speechDispo() { return !!(window.SpeechRecognition || window.webkitSpeechRecognition); }
+    function parler(txt, onDone) {
+      try {
+        speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(txt);
+        u.lang = 'fr-FR';
+        if (onDone) { u.onend = onDone; u.onerror = onDone; }
+        speechSynthesis.speak(u);
+      } catch (e) { if (onDone) onDone(); }
+    }
+    async function voWakeLockOn() { try { if ('wakeLock' in navigator) voWakeLock = await navigator.wakeLock.request('screen'); } catch (e) {} }
+    function voWakeLockOff() { try { if (voWakeLock) { voWakeLock.release(); voWakeLock = null; } } catch (e) {} }
+    function voSet(s, t) {
+      if (s !== null) document.getElementById('vo-status').textContent = s;
+      if (t !== null) document.getElementById('vo-transcript').textContent = t;
+    }
+
+    function voOpen() {
+      document.getElementById('vo-overlay').classList.add('open');
+      document.getElementById('vo-result').classList.add('hidden');
+      if (!speechDispo()) { voSet('⚠ Dictée non disponible dans ce navigateur (essaie Chrome ou Safari)', ''); return; }
+      voContinu = true; voPause = false;
+      voWakeLockOn();
+      voEcouter();
+    }
+    function voClose() {
+      voContinu = false; voPause = false;
+      if (voRec) { try { voRec.stop(); } catch (e) {} voRec = null; }
+      try { speechSynthesis.cancel(); } catch (e) {}
+      voWakeLockOff();
+      document.getElementById('vo-mic').classList.remove('ecoute');
+      document.getElementById('vo-overlay').classList.remove('open');
+    }
+    function voMicTap() {
+      if (voBusy) return;
+      if (!speechDispo()) { voSet('⚠ Dictée non disponible dans ce navigateur', ''); return; }
+      if (!voContinu) { voContinu = true; voPause = false; voEcouter(); return; }
+      voPause = !voPause;
+      if (voPause) {
+        if (voRec) { try { voRec.stop(); } catch (e) {} }
+        voSet('⏸ En pause — appuie sur le micro pour reprendre', '');
+      } else {
+        document.getElementById('vo-result').classList.add('hidden');
+        voEcouter();
+      }
+    }
+
+    function voEcouter() {
+      if (!voContinu || voPause || voBusy || voRec) return;
+      if (!document.getElementById('vo-overlay').classList.contains('open')) return;
+      try { if (speechSynthesis.speaking) { setTimeout(voEcouter, 800); return; } } catch (e) {}
+      const mic = document.getElementById('vo-mic');
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      let rec;
+      try { rec = new SR(); } catch (e) { return; }
+      rec.lang = 'fr-FR'; rec.interimResults = true; rec.continuous = true; rec.maxAlternatives = 1;
+      voRec = rec;
+      voSet('🎙 Je t\'écoute — « Ajoute … » ou « Annule … »', '');
+      mic.classList.add('ecoute');
+      let lastCombined = '', capTimer = null, done = false;
+      const finaliser = () => {
+        if (done) return;
+        const exN = CRO_NEW.exec(lastCombined);
+        if (!exN && !CRO_ADD.test(lastCombined) && !CRO_DEL.test(lastCombined)) return;
+        done = true;
+        clearTimeout(capTimer);
+        try { rec.stop(); } catch (err) {}
+        if (exN) voNouveauCR(lastCombined.slice(exN.index + exN[0].length)); // « nouveau CR [chantier X] » : local, sans IA
+        else voTraiterCommande(lastCombined.trim());
+      };
+      rec.onresult = e => {
+        let finals = '', interim = '';
+        for (let i = 0; i < e.results.length; i++) {
+          const seg = e.results[i][0].transcript;
+          if (e.results[i].isFinal) finals += seg + ' ';
+          else interim += seg;
+        }
+        lastCombined = (finals + interim).trim();
+        if (CRO_NEW.test(lastCombined) || CRO_ADD.test(lastCombined) || CRO_DEL.test(lastCombined)) {
+          voSet('📝 Je note… (j\'envoie dès que tu marques une pause)', lastCombined);
+          clearTimeout(capTimer);
+          capTimer = setTimeout(finaliser, CRO_SILENCE);
+        } else if (lastCombined) voSet(null, lastCombined);
+      };
+      rec.onerror = ev => {
+        if (ev.error === 'not-allowed') {
+          voContinu = false;
+          mic.classList.remove('ecoute');
+          voSet('⚠ Autorise le micro pour dicter', '');
+        }
+      };
+      rec.onend = () => {
+        voRec = null;
+        mic.classList.remove('ecoute');
+        clearTimeout(capTimer);
+        if (!done && (CRO_NEW.test(lastCombined) || CRO_ADD.test(lastCombined) || CRO_DEL.test(lastCombined))) { finaliser(); return; }
+        if (voContinu && !voPause && !voBusy) setTimeout(voEcouter, 350);
+      };
+      try { rec.start(); } catch (e) { voRec = null; mic.classList.remove('ecoute'); }
+    }
+
+    /* « Nouveau CR » dicté : bascule sur un CR vierge, l'actuel reste en brouillon.
+       On peut préciser le chantier : « nouveau CR chantier Canal de la Sambre ». */
+    function voNouveauCR(reste) {
+      const mic = document.getElementById('vo-mic');
+      mic.classList.remove('ecoute');
+      voRec = null;
+      let chantier = String(reste || '').replace(/^[\s:,.!?]+/, '').replace(/^(pour|sur|au|à|chantier)\s+/i, '').trim();
+      const b = nouveauBrouillon(chantier);
+      const resu = document.getElementById('vo-result');
+      resu.innerHTML = '📝 <b>Nouveau CR ouvert</b> : ' + b.crNum + (chantier ? ' — ' + chantier : '') + '<br>Le précédent reste en brouillon.';
+      resu.classList.remove('hidden');
+      voSet('Nouveau CR prêt ! Je t\'écoute…', '');
+      parler('Nouveau CR ouvert' + (chantier ? ' pour ' + chantier : '') + '. Je t\'écoute.', () => setTimeout(voEcouter, 250));
+    }
+
+    async function voTraiterCommande(texte) {
+      const mic = document.getElementById('vo-mic');
+      mic.classList.remove('ecoute');
+      voRec = null;
+      voSet('🤖 Je traite…', '« ' + texte + ' »');
+      voBusy = true; mic.disabled = true;
+      try {
+        const r = await fetch(IA_ENDPOINT, { method: 'POST', body: JSON.stringify({
+          action: 'ia', mode: 'crobs', texte: texte,
+          observations: lireLignes().map((o, i) => ({ i: i, type: o.type, desc: o.desc }))
+        }) });
+        const j = await r.json();
+        if (!j || !j.ok) throw new Error((j && j.error) || 'réponse invalide');
+        const res = j.resultat || {};
+        const conf = Math.round(res.confiance || 0);
+        const resu = document.getElementById('vo-result');
+        if (res.op === 'ajouter' && res.description) {
+          const type = ['PP', 'PA', 'CD', 'AD'].indexOf(res.type) >= 0 ? res.type : 'PA';
+          ajouterObs({
+            type: type,
+            desc: res.description,
+            action: type === 'PP' ? '' : (res.action || ''),
+            domaine: res.domaine || '',
+            impact: res.impact || '',
+            statut: (type !== 'PP' && (res.action || '')) ? 'A planifier' : ''
+          }, false);
+          resu.innerHTML = '✅ <b>' + (TYPE_LIBELLE[type] || type) + '</b>' + (conf && conf < 95 ? ' <i>(à vérifier)</i>' : '') + '<br>' + res.description +
+            (res.action && type !== 'PP' ? '<br>🔧 ' + res.action : '');
+          resu.classList.remove('hidden');
+          voSet('C\'est noté ! Je continue d\'écouter…', '');
+          parler('Ajouté en ' + (TYPE_LIBELLE[type] || type) + (conf && conf < 95 ? ', à vérifier' : '') + ' : ' + res.description, () => setTimeout(voEcouter, 250));
+        } else if (res.op === 'supprimer' && res.index != null) {
+          const rows = document.querySelectorAll('#obs-tbody tr');
+          const tr = rows[res.index];
+          if (tr) {
+            const desc = tr.querySelector('.inp-desc').value || 'la ligne ' + (res.index + 1);
+            tr.remove();
+            majCompteurs();
+            sauverBrouillon();
+            resu.innerHTML = '🗑 Supprimé : ' + desc;
+            resu.classList.remove('hidden');
+            voSet('Ligne supprimée. Je continue d\'écouter…', '');
+            parler('Supprimé : ' + desc, () => setTimeout(voEcouter, 250));
+          } else {
+            voSet('Je n\'ai pas trouvé cette ligne — reformule', '');
+            parler('Je n\'ai pas trouvé la ligne à supprimer, reformule', () => setTimeout(voEcouter, 250));
+          }
+        } else {
+          voSet('Je n\'ai pas compris — reformule', '');
+          parler(res.reponse || 'Je n\'ai pas compris, tu peux reformuler ?', () => setTimeout(voEcouter, 250));
+        }
+      } catch (e) {
+        voSet('⚠ IA injoignable — réessaie', '');
+        parler('Erreur, je n\'ai pas pu joindre l\'IA', () => setTimeout(voEcouter, 250));
+      } finally {
+        voBusy = false; mic.disabled = false;
+        setTimeout(voEcouter, 8000); // filet de sécurité
+      }
+    }
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible' && document.getElementById('vo-overlay').classList.contains('open') && voContinu && !voPause) {
+        voWakeLockOn();
+        voEcouter();
+      }
+    });
+
+    // ========================================================
+    // INITIALISATION (multi-brouillons + migration de l'ancien brouillon)
+    // ========================================================
+    (function initBrouillons() {
+      try {
+        const ancien = localStorage.getItem('crhse_brouillon_v1');
+        if (ancien && !brListe().length) {
+          const v1 = JSON.parse(ancien);
+          v1.id = brUid(); v1.envoye = false; v1.majLe = new Date().toISOString();
+          brEcrireListe([v1]);
+          localStorage.removeItem('crhse_brouillon_v1');
+        }
+      } catch (e) {}
+      const l = brListe();
+      if (l.length) {
+        const cid = localStorage.getItem(BR_COURANT_KEY);
+        const b = l.find(x => x.id === cid) || l.slice().sort((a, c) => (c.majLe || '').localeCompare(a.majLe || ''))[0];
+        remplirFormulaire(b);
+        if (l.length > 1) toast('📂 ' + l.length + ' CR en brouillon — navigue avec le sélecteur en haut', 'success');
+      } else {
+        nouveauBrouillon();
+      }
+    })();
   </script>
 </body>
 </html>
