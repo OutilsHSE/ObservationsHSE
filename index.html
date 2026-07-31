@@ -1,0 +1,2140 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CR HSE — CDES</title>
+  <meta name="theme-color" content="#003A6E">
+  <link rel="manifest" href="crhse.webmanifest">
+  <link rel="apple-touch-icon" href="iconcr192.png">
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    :root {
+      --bleu-marine: #003A6E;
+      --bleu-clair: #0077B6;
+      --bleu-accent: #00B4D8;
+      --bleu-pale: #E8F4FD;
+      --vert: #2DC653;
+      --orange: #F4A03A;
+      --rouge: #E63946;
+      --bleu-pa: #4895EF;
+      --gris-clair: #F5F7FA;
+      --gris-bord: #D0DAE8;
+      --texte: #1A2B3C;
+      --blanc: #FFFFFF;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Barlow', sans-serif;
+      background: var(--gris-clair);
+      color: var(--texte);
+      min-height: 100vh;
+    }
+
+    /* ===== HEADER ===== */
+    .header {
+      background: linear-gradient(135deg, var(--bleu-marine) 0%, var(--bleu-clair) 100%);
+      padding: 0;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .header::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -10%;
+      width: 400px;
+      height: 400px;
+      border-radius: 50%;
+      background: rgba(0, 180, 216, 0.12);
+      pointer-events: none;
+    }
+
+    .header-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 28px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .header-logo {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .header-logo img {
+      height: 48px;
+      filter: brightness(0) invert(1);
+    }
+
+    .header-title {
+      color: white;
+    }
+
+    .header-title h1 {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 1.7rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      line-height: 1;
+    }
+
+    .header-title p {
+      font-size: 0.78rem;
+      opacity: 0.8;
+      margin-top: 2px;
+      letter-spacing: 0.5px;
+    }
+
+    .header-cr {
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 8px;
+      padding: 8px 16px;
+      color: white;
+      text-align: right;
+    }
+
+    .header-cr .cr-label {
+      font-size: 0.72rem;
+      opacity: 0.8;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .header-cr .cr-value {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+    }
+
+    /* ===== CONTENU PRINCIPAL ===== */
+    .main {
+      max-width: 100%;
+      margin: 0 auto;
+      padding: 24px 32px 60px;
+    }
+
+    @media (min-width: 1400px) {
+      .main { padding: 24px 48px 60px; }
+    }
+
+    /* ===== SECTION ===== */
+    .section {
+      background: white;
+      border-radius: 12px;
+      padding: 22px 24px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(0,58,110,0.07);
+      border: 1px solid var(--gris-bord);
+    }
+
+    .section-title {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--bleu-marine);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 18px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid var(--bleu-pale);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-title .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--bleu-accent);
+      flex-shrink: 0;
+    }
+
+    /* ===== GRILLE CHAMPS ===== */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 16px;
+    }
+
+    .grid-4 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr 1fr;
+      gap: 16px;
+    }
+
+    @media (max-width: 900px) {
+      .grid-3, .grid-4 { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (max-width: 700px) {
+      .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+    }
+
+    /* ===== CHAMP ===== */
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .field label {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--bleu-marine);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .field input,
+    .field select,
+    .field textarea {
+      border: 1.5px solid var(--gris-bord);
+      border-radius: 7px;
+      padding: 9px 12px;
+      font-family: 'Barlow', sans-serif;
+      font-size: 0.92rem;
+      color: var(--texte);
+      background: white;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      width: 100%;
+    }
+
+    .field input:focus,
+    .field select:focus,
+    .field textarea:focus {
+      outline: none;
+      border-color: var(--bleu-accent);
+      box-shadow: 0 0 0 3px rgba(0,180,216,0.12);
+    }
+
+    .field textarea {
+      resize: vertical;
+      min-height: 70px;
+    }
+
+    /* ===== PHOTOS CHANTIER ===== */
+    .photo-zone {
+      border: 2px dashed var(--gris-bord);
+      border-radius: 10px;
+      padding: 10px 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: var(--gris-clair);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+    }
+
+    .photo-zone:hover,
+    .photo-zone.dragover {
+      border-color: var(--bleu-accent);
+      background: var(--bleu-pale);
+    }
+
+    .photo-zone p {
+      color: #8099B4;
+      font-size: 0.88rem;
+      margin: 0;
+    }
+
+    .photo-zone .icon {
+      font-size: 1.3rem;
+    }
+
+    .photos-preview {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .photo-thumb {
+      position: relative;
+      display: inline-block;
+    }
+
+    .photo-thumb img {
+      width: 220px;
+      height: 165px;
+      object-fit: cover;
+      border-radius: 7px;
+      border: 2px solid var(--gris-bord);
+      cursor: zoom-in;
+    }
+
+    .photo-thumb .del-photo {
+      position: absolute;
+      top: -6px;
+      right: -6px;
+      background: var(--rouge);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      font-size: 11px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+    }
+
+    /* ===== COMPTEURS ===== */
+    .compteurs {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+
+    .compteur {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: all 0.2s;
+      user-select: none;
+    }
+
+    .compteur.PP { background: #D4EDDA; color: #155724; border-color: #A8D5B5; }
+    .compteur.PA { background: #CCE5FF; color: #004085; border-color: #9ECFFF; }
+    .compteur.CD { background: #FFF3CD; color: #856404; border-color: #FFE08A; }
+    .compteur.AD { background: #F8D7DA; color: #721C24; border-color: #F5B7BB; }
+
+    .compteur .count {
+      background: rgba(0,0,0,0.12);
+      border-radius: 5px;
+      padding: 1px 7px;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 1.05rem;
+    }
+
+    .btn-aide {
+      background: var(--bleu-marine);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      margin-left: auto;
+    }
+
+    /* ===== TABLEAU OBSERVATIONS ===== */
+    .obs-table-wrapper {
+      overflow-x: auto;
+    }
+
+    table.obs-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.87rem;
+    }
+
+    .obs-table th {
+      background: var(--bleu-marine);
+      color: white;
+      padding: 10px 8px;
+      text-align: left;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 600;
+      font-size: 0.82rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+    }
+
+    .obs-table td {
+      padding: 6px 6px;
+      border-bottom: 1px solid var(--gris-bord);
+      vertical-align: top;
+    }
+
+    .obs-table tr.PP td { background: #F0FBF2; }
+    .obs-table tr.PA td { background: #EBF4FF; }
+    .obs-table tr.CD td { background: #FFFBEE; }
+    .obs-table tr.AD td { background: #FFF1F2; }
+
+    .obs-table select,
+    .obs-table input,
+    .obs-table textarea {
+      border: 1px solid var(--gris-bord);
+      border-radius: 5px;
+      padding: 5px 7px;
+      font-family: 'Barlow', sans-serif;
+      font-size: 0.84rem;
+      width: 100%;
+      background: rgba(255,255,255,0.8);
+    }
+
+    .obs-table select:focus,
+    .obs-table input:focus,
+    .obs-table textarea:focus {
+      outline: none;
+      border-color: var(--bleu-accent);
+    }
+
+    .obs-table textarea {
+      min-height: 54px;
+      resize: vertical;
+    }
+
+    .col-type { width: 80px; }
+    .col-desc { min-width: 180px; }
+    .col-action { min-width: 160px; }
+    .col-domaine { width: 130px; }
+    .col-impact { width: 100px; }
+    .col-transv { width: 65px; }
+    .col-echeance { width: 115px; }
+    .col-statut { width: 110px; }
+    .col-photo { width: 130px; }
+    .col-del { width: 42px; }
+    .col-move { width: 26px; }
+
+    /* Poignée pour réordonner les lignes */
+    .obs-poignee {
+      cursor: grab;
+      color: #8099B4;
+      font-size: 1.05rem;
+      user-select: none;
+      display: inline-block;
+      padding: 6px 2px;
+    }
+    .obs-poignee:active { cursor: grabbing; }
+    tr.en-deplacement { opacity: 0.35; }
+    tr.drag-dessus td { border-top: 3px solid var(--bleu-accent) !important; }
+    tr.drag-dessous td { border-bottom: 3px solid var(--bleu-accent) !important; }
+
+    /* Dépôt d'une photo sur la cellule d'une observation */
+    .obs-photo-cell.photo-drop-hover .obs-photo-btn {
+      background: var(--bleu-clair);
+      color: white;
+      border-style: solid;
+    }
+    .obs-photo-cell.photo-drop-hover .obs-photo-preview img {
+      outline: 3px solid var(--bleu-accent);
+    }
+
+    /* Cellule photo dans le tableau */
+    .obs-photo-cell {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .obs-photo-btn {
+      background: var(--bleu-pale);
+      border: 1.5px dashed var(--bleu-accent);
+      color: var(--bleu-clair);
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 0.78rem;
+      cursor: pointer;
+      font-weight: 600;
+      white-space: nowrap;
+      transition: all 0.15s;
+    }
+
+    .obs-photo-btn:hover {
+      background: var(--bleu-clair);
+      color: white;
+    }
+
+    .obs-photo-preview {
+      position: relative;
+      display: inline-block;
+    }
+
+    .obs-photo-preview img {
+      width: 115px;
+      height: 85px;
+      object-fit: cover;
+      border-radius: 5px;
+      border: 1.5px solid var(--gris-bord);
+      cursor: zoom-in;
+    }
+
+    .obs-photo-preview .photo-del-btn {
+      position: absolute;
+      top: -6px;
+      right: -6px;
+      background: var(--rouge);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 18px;
+      height: 18px;
+      font-size: 10px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+      padding: 0;
+    }
+
+    /* Pour l'impression : grandes images */
+    @media print {
+      .obs-photo-preview img {
+        width: 180px;
+        height: 135px;
+      }
+      .photo-thumb img {
+        width: 300px;
+        height: 225px;
+      }
+      .photo-zone { display: none !important; }
+      .obs-photo-btn { display: none !important; }
+      .photo-del-btn { display: none !important; }
+    }
+
+    .btn-del-obs {
+      background: none;
+      border: none;
+      color: var(--rouge);
+      cursor: pointer;
+      font-size: 1.1rem;
+      padding: 4px;
+      border-radius: 4px;
+      transition: background 0.15s;
+    }
+
+    .btn-del-obs:hover { background: #FFF1F2; }
+
+    /* Badge type */
+    .type-badge {
+      display: inline-block;
+      padding: 3px 7px;
+      border-radius: 5px;
+      font-weight: 700;
+      font-size: 0.78rem;
+      font-family: 'Barlow Condensed', sans-serif;
+    }
+
+    .type-PP { background: #D4EDDA; color: #155724; }
+    .type-PA { background: #CCE5FF; color: #004085; }
+    .type-CD { background: #FFF3CD; color: #856404; }
+    .type-AD { background: #F8D7DA; color: #721C24; }
+
+    /* ===== BOUTON AJOUTER OBSERVATION ===== */
+    .btn-add-obs {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--bleu-pale);
+      border: 2px dashed var(--bleu-accent);
+      color: var(--bleu-clair);
+      border-radius: 8px;
+      padding: 10px 20px;
+      font-family: 'Barlow', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 14px;
+      transition: all 0.2s;
+      width: 100%;
+      justify-content: center;
+    }
+
+    .btn-add-obs:hover {
+      background: var(--bleu-clair);
+      color: white;
+      border-style: solid;
+    }
+
+    /* ===== BARRE D'ACTIONS ===== */
+    .action-bar {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      background: white;
+      border-radius: 12px;
+      padding: 18px 24px;
+      box-shadow: 0 2px 8px rgba(0,58,110,0.07);
+      border: 1px solid var(--gris-bord);
+      position: sticky;
+      bottom: 16px;
+    }
+
+    .btn {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-family: 'Barlow', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn:active { transform: scale(0.97); }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--bleu-marine), var(--bleu-clair));
+      color: white;
+    }
+    .btn-primary:hover { opacity: 0.9; }
+
+    .btn-success {
+      background: linear-gradient(135deg, #1B7A3A, var(--vert));
+      color: white;
+    }
+    .btn-success:hover { opacity: 0.9; }
+
+    .btn-warning {
+      background: linear-gradient(135deg, #C47D00, var(--orange));
+      color: white;
+    }
+    .btn-warning:hover { opacity: 0.9; }
+
+    .btn-secondary {
+      background: var(--gris-clair);
+      color: var(--bleu-marine);
+      border: 1.5px solid var(--gris-bord);
+    }
+    .btn-secondary:hover { background: var(--bleu-pale); border-color: var(--bleu-accent); }
+
+    .btn-danger {
+      background: #FFF1F2;
+      color: var(--rouge);
+      border: 1.5px solid #F5B7BB;
+    }
+
+    /* ===== MODALE AIDE ===== */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-overlay.open { display: flex; }
+
+    .modal-box {
+      background: white;
+      border-radius: 14px;
+      padding: 28px 32px;
+      max-width: 620px;
+      width: 90%;
+      max-height: 85vh;
+      overflow-y: auto;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+      position: relative;
+    }
+
+    .modal-box h2 {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 1.3rem;
+      color: var(--bleu-marine);
+      margin-bottom: 16px;
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 16px;
+      right: 18px;
+      background: none;
+      border: none;
+      font-size: 1.4rem;
+      cursor: pointer;
+      color: #8099B4;
+    }
+
+    .type-legend {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .type-legend-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 10px;
+      border-radius: 8px;
+    }
+
+    .type-legend-item.PP { background: #F0FBF2; }
+    .type-legend-item.PA { background: #EBF4FF; }
+    .type-legend-item.CD { background: #FFFBEE; }
+    .type-legend-item.AD { background: #FFF1F2; }
+
+    .type-legend-item p {
+      font-size: 0.83rem;
+      line-height: 1.4;
+      color: #445;
+    }
+
+    /* ===== TOAST ===== */
+    .toast {
+      position: fixed;
+      bottom: 80px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--bleu-marine);
+      color: white;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      z-index: 9999;
+      opacity: 0;
+      transition: all 0.3s ease;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .toast.success { background: #1B7A3A; }
+    .toast.error { background: var(--rouge); }
+
+    /* ===== CHAMP DÉSACTIVÉ ===== */
+    input:disabled, select:disabled, textarea:disabled {
+      background: #F0F0F0 !important;
+      color: #AAA !important;
+      cursor: not-allowed;
+    }
+
+    /* ===== VUE RAPPORT (export PDF / impression) ===== */
+    #print-view { display: none; font-family: 'Barlow', Arial, sans-serif; color: var(--texte); }
+    .pv-entete {
+      display: flex; justify-content: space-between; align-items: center;
+      background: var(--bleu-marine); color: white; border-radius: 8px;
+      padding: 14px 18px; margin-bottom: 12px;
+      -webkit-print-color-adjust: exact; print-color-adjust: exact;
+    }
+    .pv-entete h1 { font-family: 'Barlow Condensed', Arial, sans-serif; font-size: 1.6rem; letter-spacing: 1.5px; margin: 0; }
+    .pv-entete p { margin: 2px 0 0; font-size: 0.8rem; opacity: 0.85; }
+    .pv-numcr { text-align: right; }
+    .pv-numcr .lib { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1px; opacity: 0.8; }
+    .pv-numcr .val { font-size: 1.15rem; font-weight: 700; }
+    .pv-infos { width: 100%; border-collapse: collapse; margin-bottom: 4px; }
+    .pv-infos td { border: 1px solid var(--gris-bord); padding: 6px 10px; font-size: 0.82rem; }
+    .pv-infos td b { color: var(--bleu-marine); display: block; font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.5px; }
+    .pv-titre-section {
+      font-family: 'Barlow Condensed', Arial, sans-serif; color: var(--bleu-marine);
+      font-weight: 700; font-size: 1.05rem; letter-spacing: 1px; text-transform: uppercase;
+      margin: 14px 0 8px; border-bottom: 2px solid var(--bleu-accent); padding-bottom: 3px;
+    }
+    .pv-photo-garde { display: block; width: 100%; max-height: 105mm; object-fit: contain; border-radius: 6px; margin-bottom: 6px; page-break-inside: avoid; break-inside: avoid; }
+    .pv-photos-grille { display: block; }
+    .pv-photos-grille img { display: inline-block; vertical-align: top; width: calc(50% - 4px); max-height: 70mm; object-fit: cover; border-radius: 6px; margin: 0 2px 6px 0; page-break-inside: avoid; break-inside: avoid; }
+    .pv-compteurs { display: flex; gap: 8px; margin-bottom: 10px; font-size: 0.8rem; font-weight: 700; }
+    .pv-compteurs span { border: 1.5px solid; border-radius: 20px; padding: 3px 12px; }
+    .pv-compteurs .PP { color: var(--vert); } .pv-compteurs .PA { color: var(--bleu-clair); }
+    .pv-compteurs .CD { color: var(--orange); } .pv-compteurs .AD { color: var(--rouge); }
+    .pv-obs {
+      border: 1px solid var(--gris-bord); border-left: 4px solid var(--gris-bord);
+      border-radius: 6px; padding: 8px 12px; margin-bottom: 8px;
+      page-break-inside: avoid; break-inside: avoid;
+    }
+    .pv-obs.PP { border-left-color: var(--vert); } .pv-obs.PA { border-left-color: var(--bleu-clair); }
+    .pv-obs.CD { border-left-color: var(--orange); } .pv-obs.AD { border-left-color: var(--rouge); }
+    .pv-obs-tete { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; font-size: 0.78rem; }
+    .pv-badge { font-weight: 700; padding: 2px 10px; border-radius: 12px; color: white; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .pv-badge.PP { background: var(--vert); } .pv-badge.PA { background: var(--bleu-clair); }
+    .pv-badge.CD { background: var(--orange); } .pv-badge.AD { background: var(--rouge); }
+    .pv-obs-num { color: #8099B4; font-weight: 600; }
+    .pv-obs-corps { display: flex; gap: 10px; align-items: flex-start; }
+    .pv-obs-texte { flex: 1; font-size: 0.86rem; }
+    .pv-obs-texte .desc, .pv-obs-texte .act { white-space: pre-wrap; }
+    .pv-obs-texte .act { margin-top: 4px; }
+    .pv-obs-texte .act b { color: var(--bleu-marine); }
+    .pv-obs-meta { margin-top: 5px; font-size: 0.72rem; color: #5A7089; }
+    .pv-obs-corps img { width: 58mm; max-height: 44mm; object-fit: cover; border-radius: 5px; }
+    .pv-pied { margin-top: 10px; text-align: right; font-size: 0.7rem; color: #8099B4; }
+
+    /* ===== PRINT ===== */
+    @media print {
+      .action-bar, .btn-add-obs, .btn-del-obs, .btn-aide,
+      .no-print, input[type="file"] { display: none !important; }
+
+      body { background: white; font-size: 11px; }
+      .section { box-shadow: none; border: 1px solid #ddd; }
+      .header { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+      @page { size: A4 portrait; margin: 10mm; }
+
+      /* rapport dédié : on n'imprime QUE la vue rapport */
+      body.mode-rapport > *:not(#print-view) { display: none !important; }
+      body.mode-rapport #print-view { display: block !important; }
+    }
+
+    /* ===== RESPONSIVE MOBILE ===== */
+    @media (max-width: 600px) {
+      .header-inner { padding: 12px 16px; flex-wrap: wrap; gap: 10px; }
+      .header-logo img { height: 36px; }
+      .header-title h1 { font-size: 1.3rem; }
+      .main { padding: 14px 12px 80px; }
+      .section { padding: 16px 14px; }
+      .action-bar { padding: 12px 14px; bottom: 8px; }
+      .btn { padding: 9px 14px; font-size: 0.83rem; }
+      .col-domaine, .col-impact, .col-transv { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="header-inner">
+      <div class="header-logo">
+        <img src="https://cdes.pro/wp-content/uploads/2019/12/logo-alt-1.svg" alt="CDES" onerror="this.style.display='none'" style="min-width:0;min-height:0;">
+        <div class="header-title">
+          <h1>OBSERVATIONS HSE</h1>
+          <p>Compte Rendu de Visite Terrain</p>
+        </div>
+      </div>
+      <div class="header-cr">
+        <div class="cr-label">N° CR</div>
+        <div class="cr-value" id="cr-numero">—</div>
+      </div>
+    </div>
+  </header>
+
+  <main class="main">
+
+    <!-- SÉLECTEUR DE CR EN BROUILLON (multi-CR) -->
+    <div class="cr-switch no-print">
+      <label for="cr-select">📂 CR en cours :</label>
+      <select id="cr-select" onchange="chargerBrouillonId(this.value)"></select>
+      <button class="cr-btn" onclick="nouveauCR()" title="Ouvrir un nouveau CR (celui-ci reste en brouillon)">＋ Nouveau</button>
+      <button class="cr-btn cr-btn-del" onclick="supprimerCRCourant()" title="Supprimer ce CR du brouillon">🗑</button>
+    </div>
+
+    <!-- SECTION 1 : INFORMATIONS CHANTIER -->
+    <div class="section">
+      <div class="section-title"><span class="dot"></span>Informations du chantier</div>
+      <div class="grid-4" style="margin-bottom:16px;">
+        <div class="field">
+          <label>Date de visite *</label>
+          <input type="date" id="date-visite">
+        </div>
+        <div class="field">
+          <label>Chantier *</label>
+          <input type="text" id="chantier" placeholder="Nom du chantier">
+        </div>
+        <div class="field">
+          <label>Activité</label>
+          <select id="activite">
+            <option value="">— Sélectionner —</option>
+            <option>Dragage</option>
+            <option>RCE</option>
+            <option>Arrachage</option>
+            <option>Restauration de berges</option>
+            <option>Faucardage</option>
+            <option>Fret Fluvial</option>
+            <option>Atelier</option>
+            <option>Bathymétrie / Topo</option>
+            <option>Equipements Portuaires</option>
+            <option>Dragage TEREOS</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Visiteur HSE</label>
+          <input type="text" id="visiteur" value="Justin HERVELIN" readonly style="background:#f1f5f8;color:#456;cursor:default">
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="field">
+          <label>Conducteur de travaux / Responsable</label>
+          <select id="conducteur">
+            <option value="">— Sélectionner —</option>
+            <option>Rémy TRUEBA</option>
+            <option>Jaime DE ALMEIDA</option>
+            <option>Evan DENEUCHATEL</option>
+            <option>Jordan DEPLEDT</option>
+            <option>Antoine NONNON</option>
+            <option>Jérôme POINSOT</option>
+            <option>Ivan BAJURA</option>
+            <option>Anthony MORIN</option>
+            <option>Antoine GOURICHON</option>
+            <option>Maxime BOMBLE</option>
+            <option>Aurélien MOMEUX</option>
+            <option>Sébastien LE GLAS</option>
+            <option>Edouard DEGAIE</option>
+            <option>Daoud DAOUDI</option>
+            <option>Xavier MAUCOURANT</option>
+            <option>Vincent DADEN</option>
+            <option>Arthur VILLEMINOT</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 2 : PHOTOS CHANTIER -->
+    <div class="section">
+      <div class="section-title"><span class="dot"></span>Photos du chantier</div>
+      <label class="photo-zone" for="photos-chantier-input">
+        <div class="icon">📷</div>
+        <p>Cliquez ou glissez des photos du chantier ici</p>
+        <input type="file" id="photos-chantier-input" accept="image/*" multiple style="display:none">
+      </label>
+      <div class="photos-preview" id="photos-chantier-preview"></div>
+    </div>
+
+    <!-- SECTION 3 : OBSERVATIONS -->
+    <div class="section">
+      <div class="section-title"><span class="dot"></span>Observations HSE</div>
+
+      <!-- COMPTEURS -->
+      <div class="compteurs">
+        <div class="compteur PP">PP 👍 <span class="count" id="count-PP">0</span></div>
+        <div class="compteur PA">PA 📋 <span class="count" id="count-PA">0</span></div>
+        <div class="compteur CD">CD ⚠️ <span class="count" id="count-CD">0</span></div>
+        <div class="compteur AD">AD 🚫 <span class="count" id="count-AD">0</span></div>
+        <button class="btn-aide no-print" onclick="document.getElementById('modal-aide').classList.add('open')">
+          ? Aide
+        </button>
+      </div>
+
+      <!-- TABLEAU -->
+      <div class="obs-table-wrapper">
+        <table class="obs-table" id="obs-table">
+          <thead>
+            <tr>
+              <th class="col-move no-print"></th>
+              <th class="col-type">Type</th>
+              <th class="col-desc">Description</th>
+              <th class="col-action">Action corrective</th>
+              <th class="col-domaine">Domaine</th>
+              <th class="col-impact">Impact HSE</th>
+              <th class="col-transv">Transv.</th>
+              <th class="col-echeance">Échéance</th>
+              <th class="col-statut">Statut</th>
+              <th class="col-photo">Photo</th>
+              <th class="col-del no-print"></th>
+            </tr>
+          </thead>
+          <tbody id="obs-tbody"></tbody>
+        </table>
+      </div>
+
+      <button class="btn-add-obs no-print" onclick="ajouterObs()">
+        ＋ Ajouter une observation
+      </button>
+    </div>
+
+    <!-- BARRE D'ACTIONS -->
+    <div class="brouillon-info no-print" id="brouillon-info">💾 Brouillon local : rien ne part au PA tant que tu ne cliques pas « Sauvegarder les données »</div>
+    <div class="action-bar no-print">
+      <button class="btn btn-primary" onclick="voOpen()" style="background:#17232e">
+        🚗 Mode voiture
+      </button>
+      <button class="btn btn-success" onclick="envoyerSharePoint()">
+        ☁️ Sauvegarder les données (PA)
+      </button>
+      <button class="btn btn-warning" onclick="exportExcel()">
+        📊 Exporter Excel
+      </button>
+      <button class="btn btn-primary" onclick="construirePrintView(); window.print()">
+        🖨️ Exporter PDF
+      </button>
+      <button class="btn btn-secondary" onclick="nouveauCR()">
+        📝 Nouveau CR
+      </button>
+    </div>
+
+  </main>
+
+  <!-- MODALE AIDE -->
+  <div class="modal-overlay" id="modal-aide">
+    <div class="modal-box">
+      <button class="modal-close" onclick="document.getElementById('modal-aide').classList.remove('open')">✕</button>
+      <h2>Guide des observations HSE</h2>
+      <p style="font-size:0.88rem;color:#556;line-height:1.5;margin-bottom:12px;">
+        3 étapes : Observer → Discuter → Se mettre d'accord.<br>
+        Pas de jugements ni de mesures disciplinaires. Règle : 3 PP pour 1 AD/CD.
+      </p>
+      <div class="type-legend">
+        <div class="type-legend-item PP">
+          <span class="type-badge type-PP">PP</span>
+          <p><strong>Point Positif</strong><br>Bonne pratique observée, comportement exemplaire, respect des consignes.</p>
+        </div>
+        <div class="type-legend-item PA">
+          <span class="type-badge type-PA">PA</span>
+          <p><strong>Point d'Amélioration</strong><br>Situation améliorable sans danger immédiat.</p>
+        </div>
+        <div class="type-legend-item CD">
+          <span class="type-badge type-CD">CD</span>
+          <p><strong>Condition Dangereuse</strong><br>Consigne non à jour, balisage absent, matériel défectueux.</p>
+        </div>
+        <div class="type-legend-item AD">
+          <span class="type-badge type-AD">AD</span>
+          <p><strong>Acte Dangereux</strong><br>Téléphone en conduisant, travail sans EPI, non-respect procédure.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODE VOITURE (dictée mains libres) -->
+  <div class="vo-overlay" id="vo-overlay">
+    <button class="vo-close" id="vo-close" title="Quitter" onclick="voClose()">✕</button>
+    <div class="vo-title">🚗 Mode voiture — CR HSE</div>
+    <div class="vo-status" id="vo-status">Je t'écoute…</div>
+    <div class="vo-transcript" id="vo-transcript"></div>
+    <button class="vo-mic" id="vo-mic" onclick="voMicTap()">🎤</button>
+    <button class="vo-trier hidden" id="vo-trier" onclick="voTrierMaintenant()">✅ Trier mes observations</button>
+    <div class="vo-result hidden" id="vo-result"></div>
+    <div class="vo-hint">Dicte tes observations <b>librement</b>, les unes à la suite des autres — les pauses ne coupent rien, pas de mot magique à dire.<br>
+    Quand tu as tout dicté, dis « <b>Terminé</b> » (ou appuie sur le bouton vert) : l'IA découpe, trie en PP / PA / CD / AD, sépare les actions correctives et reformule proprement.<br>
+    « <b>Nouveau CR</b> chantier Canal de la Sambre » ouvre un 2ᵉ CR · « Annule le non-port des EPI… Terminé » supprime une ligne.<br>
+    Rien ne part au PA sans le bouton Sauvegarder. Un appui sur le micro = pause.</div>
+  </div>
+
+  <style>
+    /* ===== Mode voiture & brouillon (ajouts) ===== */
+    .brouillon-info { text-align: center; font-size: 12px; color: #5f7180; margin: 14px 0 -6px; }
+    .cr-switch {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      background: #fff; border: 1px solid #dde3e8; border-left: 4px solid #2196F3;
+      border-radius: 10px; padding: 10px 14px; margin-bottom: 16px;
+      box-shadow: 0 1px 3px rgba(20,40,60,.08);
+    }
+    .cr-switch label { font-weight: bold; font-size: 13px; color: #1565C0; white-space: nowrap; }
+    .cr-switch select {
+      flex: 1; min-width: 180px; font-family: inherit; font-size: 13px;
+      padding: 8px 10px; border: 1px solid #d7e0e8; border-radius: 8px; background: #fff;
+    }
+    .cr-btn {
+      font-family: inherit; font-size: 13px; font-weight: bold; cursor: pointer;
+      border: 1px solid #d7e0e8; background: #eaf6fd; color: #1565C0;
+      border-radius: 8px; padding: 8px 12px;
+    }
+    .cr-btn-del { background: #fdecea; color: #d32f2f; }
+    .hidden { display: none !important; }
+    .vo-overlay {
+      position: fixed; inset: 0; z-index: 300;
+      background: linear-gradient(180deg, #17232e 0%, #133654 100%);
+      display: none; flex-direction: column; align-items: center; justify-content: center;
+      gap: 22px; padding: 24px; text-align: center;
+    }
+    .vo-overlay.open { display: flex; }
+    .vo-close {
+      position: absolute; top: 16px; right: 16px;
+      background: rgba(255,255,255,.14); border: none; color: #fff;
+      font-size: 20px; width: 46px; height: 46px; border-radius: 50%; cursor: pointer;
+    }
+    .vo-title { color: rgb(116, 204, 239); font-size: 14px; letter-spacing: 2.5px; text-transform: uppercase; font-weight: bold; }
+    .vo-status { color: #fff; font-size: 21px; font-weight: bold; min-height: 30px; }
+    .vo-transcript { color: #cfe7f5; font-size: 17px; min-height: 50px; max-width: 640px; line-height: 1.5; }
+    .vo-mic {
+      width: 132px; height: 132px; border-radius: 50%; border: none;
+      background: #2196F3; color: #fff; font-size: 54px; cursor: pointer;
+      box-shadow: 0 8px 40px rgba(33, 150, 243, .45);
+    }
+    .vo-mic.ecoute { background: #d32f2f; animation: vopulse 1.2s infinite; }
+    .vo-mic:disabled { opacity: .5; }
+    .vo-trier {
+      background: #1B7A3A; color: #fff; border: none; border-radius: 14px;
+      padding: 14px 26px; font-size: 17px; font-weight: bold; cursor: pointer;
+      box-shadow: 0 6px 24px rgba(27, 122, 58, .4);
+    }
+    @keyframes vopulse {
+      0% { box-shadow: 0 0 0 0 rgba(211, 47, 47, .55); }
+      70% { box-shadow: 0 0 0 26px rgba(211, 47, 47, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(211, 47, 47, 0); }
+    }
+    .vo-result {
+      background: rgba(255,255,255,.1); border: 1px solid rgba(116, 204, 239, .45);
+      border-radius: 14px; padding: 14px 20px; color: #fff; font-size: 15px; max-width: 640px; line-height: 1.5;
+    }
+    .vo-hint { color: #9fb8c8; font-size: 12.5px; max-width: 560px; line-height: 1.6; }
+  </style>
+
+  <!-- TOAST -->
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // ========================================================
+    // CONFIGURATION WEBHOOK GOOGLE APPS SCRIPT
+    // ========================================================
+    const WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbxxveoZL1g2bziP1G8JrXZktagm7ylJx6TGc1zZq2gBAQ6EvQ4G5d-feR6tV_MmSXOu/exec';
+
+    // ========================================================
+    // NUMÉROTATION AUTOMATIQUE
+    // ========================================================
+    function genererNumeroCR() {
+      const year = new Date().getFullYear();
+      const key = 'cr_counter_' + year;
+      let n = parseInt(localStorage.getItem(key) || '0') + 1;
+      localStorage.setItem(key, n);
+      return 'OBS-' + year + '-' + String(n).padStart(3, '0');
+    }
+
+    // ========================================================
+    // TOAST
+    // ========================================================
+    function toast(msg, type = '') {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.className = 'toast show ' + type;
+      setTimeout(() => { t.className = 'toast'; }, 3000);
+    }
+
+    // ========================================================
+    // COMPTEURS
+    // ========================================================
+    function majCompteurs() {
+      const rows = document.querySelectorAll('#obs-tbody tr');
+      let c = { PP: 0, PA: 0, CD: 0, AD: 0 };
+      rows.forEach(tr => {
+        const v = tr.querySelector('.sel-type').value;
+        if (c[v] !== undefined) c[v]++;
+      });
+      ['PP','PA','CD','AD'].forEach(t => {
+        document.getElementById('count-' + t).textContent = c[t];
+      });
+    }
+
+    // ========================================================
+    // GESTION LIGNE PP (désactiver champs action)
+    // ========================================================
+    function majLigneType(tr) {
+      const type = tr.querySelector('.sel-type').value;
+      const toDisable = tr.querySelectorAll('.can-disable');
+      if (type === 'PP') {
+        toDisable.forEach(el => { el.disabled = true; el.value = ''; });
+        tr.className = 'PP';
+      } else {
+        toDisable.forEach(el => { el.disabled = false; });
+        tr.className = type;
+      }
+      majCompteurs();
+    }
+
+    // ========================================================
+    // AJOUTER UNE OBSERVATION
+    // ========================================================
+    let obsCount = 0;
+
+    function ajouterObs(data = {}, focus = true) {
+      obsCount++;
+      const tbody = document.getElementById('obs-tbody');
+      const tr = document.createElement('tr');
+      tr.className = data.type || 'PP';
+
+      tr.innerHTML = `
+        <td class="col-move no-print">
+          <span class="obs-poignee" title="Glisser pour déplacer la ligne">⠿</span>
+        </td>
+        <td class="col-type">
+          <select class="sel-type" onchange="majLigneType(this.closest('tr'))">
+            <option value="PP" ${(data.type||'PP')==='PP'?'selected':''}>PP 👍</option>
+            <option value="PA" ${data.type==='PA'?'selected':''}>PA 📋</option>
+            <option value="CD" ${data.type==='CD'?'selected':''}>CD ⚠️</option>
+            <option value="AD" ${data.type==='AD'?'selected':''}>AD 🚫</option>
+          </select>
+        </td>
+        <td class="col-desc">
+          <textarea class="inp-desc" placeholder="Description de l'observation..." oninput="autoH(this)">${data.desc||''}</textarea>
+        </td>
+        <td class="col-action">
+          <textarea class="can-disable inp-action" placeholder="Action à mener..." oninput="autoH(this)">${data.action||''}</textarea>
+        </td>
+        <td class="col-domaine">
+          <select class="can-disable inp-domaine">
+            <option value="">—</option>
+            <option ${data.domaine==='Sécurité'?'selected':''}>Sécurité</option>
+            <option ${data.domaine==='Santé'?'selected':''}>Santé</option>
+            <option ${data.domaine==='Environnement'?'selected':''}>Environnement</option>
+            <option ${data.domaine==='Réglementaire'?'selected':''}>Réglementaire</option>
+          </select>
+        </td>
+        <td class="col-impact">
+          <select class="can-disable inp-impact">
+            <option value="">—</option>
+            <option ${data.impact==='Critique'?'selected':''}>Critique</option>
+            <option ${data.impact==='Fort'?'selected':''}>Fort</option>
+            <option ${data.impact==='Moyen'?'selected':''}>Moyen</option>
+            <option ${data.impact==='Faible'?'selected':''}>Faible</option>
+          </select>
+        </td>
+        <td class="col-transv">
+          <select class="can-disable inp-transv">
+            <option value="">—</option>
+            <option ${data.transv==='Oui'?'selected':''}>Oui</option>
+            <option ${data.transv==='Non'?'selected':''}>Non</option>
+          </select>
+        </td>
+        <td class="col-echeance">
+          <input type="date" class="can-disable inp-echeance" value="${data.echeance||''}">
+        </td>
+        <td class="col-statut">
+          <select class="can-disable inp-statut">
+            <option value="">—</option>
+            <option ${data.statut==='A planifier'?'selected':''}>A planifier</option>
+            <option ${data.statut==='En cours'?'selected':''}>En cours</option>
+            <option ${data.statut==='Clôturée'?'selected':''}>Clôturée</option>
+          </select>
+        </td>
+        <td class="col-photo">
+          <div class="obs-photo-cell">
+            <input type="file" accept="image/*" capture="environment" class="inp-photo" style="display:none" onchange="ajouterPhotoObs(this)">
+            <button class="obs-photo-btn no-print" onclick="this.previousElementSibling.click()">📷 Photo</button>
+            <div class="photo-preview-container"></div>
+          </div>
+        </td>
+        <td class="col-del no-print">
+          <button class="btn-del-obs" onclick="supprimerObs(this)" title="Supprimer">✕</button>
+        </td>
+      `;
+
+      tbody.appendChild(tr);
+      majLigneType(tr);
+
+      // Focus sur la description (pas en mode vocal : éviter le clavier)
+      if (focus) tr.querySelector('.inp-desc').focus();
+      sauverBrouillon();
+    }
+
+    function supprimerObs(btn) {
+      btn.closest('tr').remove();
+      majCompteurs();
+      sauverBrouillon();
+    }
+
+    // Attacher une photo à une observation (clic OU glisser-déposer)
+    function attacherPhotoObs(cell, file) {
+      if (!file) return;
+      if (file.type && file.type.indexOf('image/') !== 0) return; // on ignore les non-images
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const container = cell.querySelector('.photo-preview-container');
+        const btn = cell.querySelector('.obs-photo-btn');
+        const input = cell.querySelector('.inp-photo');
+
+        // Créer le preview
+        container.innerHTML = '';
+        const wrap = document.createElement('div');
+        wrap.className = 'obs-photo-preview';
+
+        const img = document.createElement('img');
+        img.src = e.target.result;
+        img.title = 'Cliquer pour voir';
+        img.onclick = () => voirPhoto(e.target.result);
+
+        const del = document.createElement('button');
+        del.className = 'photo-del-btn no-print';
+        del.textContent = '✕';
+        del.onclick = (ev) => {
+          ev.stopPropagation();
+          container.innerHTML = '';
+          btn.style.display = 'inline-block';
+          if (input) input.value = '';
+        };
+
+        wrap.appendChild(img);
+        wrap.appendChild(del);
+        container.appendChild(wrap);
+
+        btn.style.display = 'none';
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function ajouterPhotoObs(input) {
+      attacherPhotoObs(input.closest('.obs-photo-cell'), input.files[0]);
+    }
+
+    function autoH(el) {
+      el.style.height = 'auto';
+      el.style.height = el.scrollHeight + 'px';
+    }
+
+    // ========================================================
+    // COLLECTER LES DONNÉES DU FORMULAIRE
+    // ========================================================
+    function collecterDonnees() {
+      const crNum = document.getElementById('cr-numero').textContent;
+      const date = document.getElementById('date-visite').value;
+      const chantier = document.getElementById('chantier').value;
+      const activite = document.getElementById('activite').value;
+      const conducteur = document.getElementById('conducteur').value;
+      const visiteur = document.getElementById('visiteur').value;
+
+      const observations = [];
+      document.querySelectorAll('#obs-tbody tr').forEach((tr, i) => {
+        observations.push({
+          nCR: crNum,
+          dateVisite: date,
+          chantier: chantier,
+          activite: activite,
+          conducteur: conducteur,
+          visiteur: visiteur,
+          nObs: i + 1,
+          type: tr.querySelector('.sel-type').value,
+          description: tr.querySelector('.inp-desc').value,
+          action: tr.querySelector('.inp-action').value,
+          domaine: tr.querySelector('.inp-domaine').value,
+          impact: tr.querySelector('.inp-impact').value,
+          transversal: tr.querySelector('.inp-transv').value,
+          echeance: tr.querySelector('.inp-echeance').value,
+          statut: tr.querySelector('.inp-statut').value,
+        });
+      });
+
+      return { crNum, date, chantier, activite, conducteur, visiteur, observations };
+    }
+
+    // ========================================================
+    // ENVOI VERS SHAREPOINT
+    // ========================================================
+    async function envoyerSharePoint() {
+      const data = collecterDonnees();
+
+      if (!data.chantier.trim()) {
+        toast('Veuillez renseigner le nom du chantier', 'error');
+        return;
+      }
+
+      if (data.observations.length === 0) {
+        toast('Ajoutez au moins une observation', 'error');
+        return;
+      }
+
+      const btn = document.querySelector('.btn-success');
+      btn.innerHTML = '⏳ Envoi en cours...';
+      btn.disabled = true;
+
+      let errors = 0;
+      let success = 0;
+
+      for (const obs of data.observations) {
+        try {
+          const payload = {
+            nCR: data.crNum,
+            dateVisite: data.date,
+            chantier: data.chantier,
+            activite: data.activite,
+            conducteur: data.conducteur,
+            visiteur: data.visiteur,
+            type: obs.type,
+            description: obs.description,
+            action: obs.action,
+            domaine: obs.domaine,
+            impact: obs.impact,
+            transversal: obs.transversal,
+            echeance: obs.echeance,
+            statut: obs.statut
+          };
+
+          const resp = await fetch(WEBHOOK_URL, {
+            method: 'POST',
+            body: JSON.stringify(payload),
+            redirect: 'follow'
+          });
+
+          if (resp.ok) { success++; }
+          else { errors++; console.error('Erreur obs', obs.nObs, resp.status); }
+
+        } catch (e) {
+          errors++;
+          console.error('Erreur réseau', e);
+        }
+      }
+
+      if (errors === 0) {
+        toast('✅ ' + success + ' observation(s) sauvegardée(s) au PA ✓', 'success');
+        // marquer ce CR comme envoyé (✓ dans le sélecteur) — il reste consultable/imprimable
+        const l = brListe();
+        const b = l.find(x => x.id === brCourantId);
+        if (b) { b.envoye = true; b.majLe = new Date().toISOString(); brEcrireListe(l); majCrSelect(); }
+      } else if (success > 0) {
+        toast('⚠️ ' + success + ' envoyées, ' + errors + ' erreur(s)', 'error');
+      } else {
+        toast('❌ Erreur d\'envoi. Vérifiez votre connexion.', 'error');
+      }
+
+      btn.innerHTML = '☁️ Sauvegarder les données (PA)';
+      btn.disabled = false;
+    }
+
+    // ========================================================
+    // EXPORT EXCEL
+    // ========================================================
+    function exportExcel() {
+      const data = collecterDonnees();
+      const rows = [['N° CR', 'Date', 'Chantier', 'Activité', 'Conducteur', 'N° Obs', 'Type', 'Description', 'Action corrective', 'Domaine', 'Impact HSE', 'Transversal', 'Échéance', 'Statut']];
+      data.observations.forEach(o => {
+        rows.push([o.nCR, o.dateVisite, o.chantier, o.activite, o.conducteur, o.nObs, o.type, o.description, o.action, o.domaine, o.impact, o.transversal, o.echeance, o.statut]);
+      });
+      const ws = XLSX.utils.aoa_to_sheet(rows);
+      ws['!cols'] = [14,12,22,18,20,6,6,45,45,14,12,10,12,12].map(w => ({wch:w}));
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Observations');
+      XLSX.writeFile(wb, titreDocument() + '.xlsx');
+    }
+
+    // ========================================================
+    // NOUVEAU CR
+    // ========================================================
+    function nouveauCR() {
+      if (!confirm('Ouvrir un nouveau CR ?\n\nLe CR affiché reste sauvegardé en brouillon — tu pourras y revenir à tout moment via le sélecteur « 📂 CR en cours ».')) return;
+      const b = nouveauBrouillon();
+      toast('📝 Nouveau CR ouvert : ' + b.crNum, 'success');
+    }
+
+    // ========================================================
+    // PHOTOS CHANTIER
+    // ========================================================
+    function voirPhoto(src) {
+      const modal = document.createElement('div');
+      modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:99999;display:flex;align-items:center;justify-content:center;cursor:pointer';
+      const bigImg = document.createElement('img');
+      bigImg.src = src;
+      bigImg.style.cssText = 'max-width:95%;max-height:95%;border-radius:8px';
+      modal.appendChild(bigImg);
+      modal.onclick = () => modal.remove();
+      document.body.appendChild(modal);
+    }
+
+    function ajouterPhotosChantier(files) {
+      const preview = document.getElementById('photos-chantier-preview');
+      Array.from(files).forEach(file => {
+        if (file.type && file.type.indexOf('image/') !== 0) return; // on ignore les non-images déposées
+        const reader = new FileReader();
+        reader.onload = e => {
+          const wrap = document.createElement('div');
+          wrap.className = 'photo-thumb';
+          const img = document.createElement('img');
+          img.src = e.target.result;
+          img.title = 'Cliquer pour agrandir';
+          img.onclick = ev => { ev.preventDefault(); voirPhoto(e.target.result); };
+          const btn = document.createElement('button');
+          btn.className = 'del-photo no-print';
+          btn.textContent = '✕';
+          btn.onclick = ev => { ev.preventDefault(); wrap.remove(); };
+          wrap.appendChild(img);
+          wrap.appendChild(btn);
+          preview.appendChild(wrap);
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    document.getElementById('photos-chantier-input').addEventListener('change', function() {
+      ajouterPhotosChantier(this.files);
+      this.value = '';
+    });
+
+    // Glisser-déposer sur la zone photos
+    (function() {
+      const zone = document.querySelector('.photo-zone');
+      ['dragenter', 'dragover'].forEach(ev => zone.addEventListener(ev, e => {
+        e.preventDefault(); e.stopPropagation();
+        zone.classList.add('dragover');
+      }));
+      ['dragleave', 'drop'].forEach(ev => zone.addEventListener(ev, e => {
+        e.preventDefault(); e.stopPropagation();
+        zone.classList.remove('dragover');
+      }));
+      zone.addEventListener('drop', e => {
+        if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length) {
+          ajouterPhotosChantier(e.dataTransfer.files);
+        }
+      });
+    })();
+
+    // Filet global : un fichier lâché à côté d'une zone ne doit pas ouvrir l'image dans l'onglet
+    ['dragover', 'drop'].forEach(ev => window.addEventListener(ev, e => {
+      if (e.dataTransfer && Array.from(e.dataTransfer.types || []).indexOf('Files') >= 0) e.preventDefault();
+    }));
+
+    // ========================================================
+    // GLISSER-DÉPOSER SUR LE TABLEAU D'OBSERVATIONS
+    //  - une image lâchée sur la cellule 📷 d'une ligne s'y attache
+    //  - la poignée ⠿ permet de réordonner les lignes
+    // ========================================================
+    (function() {
+      const tbody = document.getElementById('obs-tbody');
+      let ligneDeplacee = null;
+
+      const estFichier = e => e.dataTransfer && Array.from(e.dataTransfer.types || []).indexOf('Files') >= 0;
+      const nettoyerReperes = () => tbody.querySelectorAll('tr').forEach(t => t.classList.remove('drag-dessus', 'drag-dessous'));
+
+      // --- photos sur les lignes ---
+      ['dragenter', 'dragover'].forEach(ev => tbody.addEventListener(ev, e => {
+        if (!estFichier(e)) return;
+        const td = e.target.closest('td.col-photo');
+        tbody.querySelectorAll('.obs-photo-cell').forEach(c => c.classList.remove('photo-drop-hover'));
+        if (!td) return;
+        e.preventDefault(); e.stopPropagation();
+        td.querySelector('.obs-photo-cell').classList.add('photo-drop-hover');
+      }));
+      tbody.addEventListener('drop', e => {
+        if (!estFichier(e)) return;
+        const td = e.target.closest('td.col-photo');
+        tbody.querySelectorAll('.obs-photo-cell').forEach(c => c.classList.remove('photo-drop-hover'));
+        if (!td) return;
+        e.preventDefault(); e.stopPropagation();
+        attacherPhotoObs(td.querySelector('.obs-photo-cell'), e.dataTransfer.files[0]);
+      });
+      tbody.addEventListener('dragleave', e => {
+        if (!estFichier(e)) return;
+        if (!e.target.closest('td.col-photo')) tbody.querySelectorAll('.obs-photo-cell').forEach(c => c.classList.remove('photo-drop-hover'));
+      });
+
+      // --- réordonner les lignes via la poignée ⠿ ---
+      tbody.addEventListener('mousedown', e => {
+        const p = e.target.closest('.obs-poignee');
+        if (p) p.closest('tr').draggable = true;
+      });
+      tbody.addEventListener('dragstart', e => {
+        const tr = e.target.closest('tr');
+        if (!tr || !tr.draggable) return;
+        ligneDeplacee = tr;
+        tr.classList.add('en-deplacement');
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', 'obs');
+      });
+      tbody.addEventListener('dragover', e => {
+        if (!ligneDeplacee || estFichier(e)) return;
+        e.preventDefault();
+        const tr = e.target.closest('tr');
+        nettoyerReperes();
+        if (!tr || tr === ligneDeplacee) return;
+        const r = tr.getBoundingClientRect();
+        tr.classList.add(e.clientY < r.top + r.height / 2 ? 'drag-dessus' : 'drag-dessous');
+      });
+      tbody.addEventListener('drop', e => {
+        if (!ligneDeplacee || estFichier(e)) return;
+        e.preventDefault();
+        const tr = e.target.closest('tr');
+        if (tr && tr !== ligneDeplacee) {
+          const r = tr.getBoundingClientRect();
+          if (e.clientY < r.top + r.height / 2) tbody.insertBefore(ligneDeplacee, tr);
+          else tbody.insertBefore(ligneDeplacee, tr.nextSibling);
+        }
+      });
+      tbody.addEventListener('dragend', () => {
+        nettoyerReperes();
+        if (ligneDeplacee) { ligneDeplacee.classList.remove('en-deplacement'); ligneDeplacee.draggable = false; }
+        ligneDeplacee = null;
+        sauverBrouillon();
+      });
+    })();
+
+    // ========================================================
+    // FERMER MODAL EN CLIQUANT DEHORS
+    // ========================================================
+    document.getElementById('modal-aide').addEventListener('click', function(e) {
+      if (e.target === this) this.classList.remove('open');
+    });
+
+    // ========================================================
+    // BROUILLONS MULTI-CR — plusieurs CR en parallèle (voiture → bureau),
+    // rien ne part au PA sans le bouton Sauvegarder
+    // ========================================================
+    const BR_LISTE_KEY = 'crhse_brouillons_v2';
+    const BR_COURANT_KEY = 'crhse_brouillon_courant';
+    let brTimer = null, brPret = false, brCourantId = null;
+
+    function brListe() { try { return JSON.parse(localStorage.getItem(BR_LISTE_KEY)) || []; } catch (e) { return []; } }
+    function brEcrireListe(l) { try { localStorage.setItem(BR_LISTE_KEY, JSON.stringify(l)); } catch (e) {} }
+    function brUid() { return 'cr' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+    function dateISO() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+
+    function lireLignes() {
+      return Array.from(document.querySelectorAll('#obs-tbody tr')).map(tr => ({
+        type: tr.querySelector('.sel-type').value,
+        desc: tr.querySelector('.inp-desc').value,
+        action: tr.querySelector('.inp-action').value,
+        domaine: tr.querySelector('.inp-domaine').value,
+        impact: tr.querySelector('.inp-impact').value,
+        transv: tr.querySelector('.inp-transv').value,
+        echeance: tr.querySelector('.inp-echeance').value,
+        statut: tr.querySelector('.inp-statut').value
+      }));
+    }
+
+    function formVersBrouillon(existant) {
+      return {
+        id: brCourantId,
+        crNum: document.getElementById('cr-numero').textContent,
+        date: document.getElementById('date-visite').value,
+        chantier: document.getElementById('chantier').value,
+        activite: document.getElementById('activite').value,
+        conducteur: document.getElementById('conducteur').value,
+        observations: lireLignes(),
+        envoye: existant ? !!existant.envoye : false,
+        majLe: new Date().toISOString()
+      };
+    }
+
+    function flushBrouillon() {
+      if (!brPret || !brCourantId) return;
+      clearTimeout(brTimer);
+      const l = brListe();
+      const i = l.findIndex(x => x.id === brCourantId);
+      const b = formVersBrouillon(i >= 0 ? l[i] : null);
+      if (i >= 0) l[i] = b; else l.push(b);
+      brEcrireListe(l);
+      try { localStorage.setItem(BR_COURANT_KEY, brCourantId); } catch (e) {}
+      majCrSelect();
+      const h = new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+      document.getElementById('brouillon-info').textContent =
+        '💾 ' + l.length + ' CR en brouillon · enregistré à ' + h + ' — rien ne part au PA sans « Sauvegarder les données »';
+    }
+
+    function sauverBrouillon() {
+      if (!brPret || !brCourantId) return;
+      clearTimeout(brTimer);
+      brTimer = setTimeout(flushBrouillon, 600);
+    }
+
+    function remplirFormulaire(b) {
+      brPret = false;
+      brCourantId = b.id;
+      document.getElementById('cr-numero').textContent = b.crNum || genererNumeroCR();
+      document.getElementById('date-visite').value = b.date || dateISO();
+      document.getElementById('chantier').value = b.chantier || '';
+      document.getElementById('activite').value = b.activite || '';
+      document.getElementById('conducteur').value = b.conducteur || '';
+      document.getElementById('visiteur').value = 'Justin HERVELIN';
+      document.getElementById('obs-tbody').innerHTML = '';
+      document.getElementById('photos-chantier-preview').innerHTML = '';
+      (b.observations || []).forEach(o => ajouterObs(o, false));
+      if (!(b.observations || []).length) ajouterObs({}, false);
+      majCompteurs();
+      try { localStorage.setItem(BR_COURANT_KEY, brCourantId); } catch (e) {}
+      brPret = true;
+      majCrSelect();
+    }
+
+    function majCrSelect() {
+      const sel = document.getElementById('cr-select');
+      const l = brListe().slice().sort((a, b) => (b.majLe || '').localeCompare(a.majLe || ''));
+      sel.innerHTML = l.map(b => {
+        const nb = (b.observations || []).filter(o => (o.desc || '').trim()).length;
+        return '<option value="' + b.id + '"' + (b.id === brCourantId ? ' selected' : '') + '>' +
+          (b.envoye ? '✓ ' : '') + (b.crNum || '?') + ' · ' + (b.chantier || 'sans chantier') + ' (' + nb + ' obs)</option>';
+      }).join('');
+    }
+
+    function chargerBrouillonId(id) {
+      if (id === brCourantId) return;
+      flushBrouillon(); // le CR affiché est mis de côté proprement
+      const b = brListe().find(x => x.id === id);
+      if (b) {
+        remplirFormulaire(b);
+        toast('📂 ' + (b.crNum || 'CR') + (b.chantier ? ' — ' + b.chantier : '') + ' chargé (photos non conservées en brouillon)', 'success');
+      }
+    }
+
+    function nouveauBrouillon(chantier) {
+      flushBrouillon();
+      const b = {
+        id: brUid(), crNum: genererNumeroCR(), date: dateISO(),
+        chantier: chantier || '', activite: '', conducteur: '',
+        observations: [], envoye: false, majLe: new Date().toISOString()
+      };
+      const l = brListe();
+      l.push(b);
+      brEcrireListe(l);
+      remplirFormulaire(b);
+      return b;
+    }
+
+    function supprimerCRCourant() {
+      const l = brListe();
+      const b = l.find(x => x.id === brCourantId);
+      if (!confirm('Supprimer ce CR du brouillon ?\n\n' + (b ? (b.crNum + (b.chantier ? ' — ' + b.chantier : '')) : '') +
+        (b && b.envoye ? '\n(déjà sauvegardé au PA ✓)' : '\n⚠ Il n\'a PAS été sauvegardé au PA.'))) return;
+      const reste = l.filter(x => x.id !== brCourantId);
+      brEcrireListe(reste);
+      brCourantId = null;
+      if (reste.length) remplirFormulaire(reste.sort((a, c) => (c.majLe || '').localeCompare(a.majLe || ''))[0]);
+      else nouveauBrouillon();
+      toast('🗑 CR retiré du brouillon');
+    }
+
+    // toute frappe ou changement dans la page alimente le brouillon
+    document.querySelector('main').addEventListener('input', sauverBrouillon);
+    document.querySelector('main').addEventListener('change', sauverBrouillon);
+
+    // ========================================================
+    // MODE VOITURE — dictée mains libres (même moteur que le Planning HSE)
+    // IA : Web App du Planning (mode 'crobs') — reformulation + rangement
+    // ========================================================
+    const IA_ENDPOINT = 'https://script.google.com/macros/s/AKfycbw4wtbictfT91nREGEry2dMBvTArwiNQ9XC8Q3iyqMje-h7KPHdXsABusXIKnU0xPEG/exec';
+    const CRO_NEW = /\bnouveau\s+(cr|c\.r\.|compte[- ]?rendu)\b/i;
+    // Fin de dictée : un segment court prononcé SEUL (« Terminé », « C'est tout », « Trie »…)
+    const CRO_FIN = /^\s*(c'?est\s+(terminé|fini|tout|bon)|terminé|termine|fini|j'?ai\s+(fini|terminé)|trie(\s+(les|ça|tout))?|analyse|envoie)\s*[.!?]*\s*$/i;
+    const TYPE_LIBELLE = { PP: 'point positif', PA: 'point d\'amélioration', CD: 'condition dangereuse', AD: 'acte dangereux' };
+
+    let voRec = null, voBusy = false, voContinu = false, voPause = false, voWakeLock = null;
+    /* Anti-bip : Chrome joue un son à chaque démarrage du micro. Sans parole, la
+       reconnaissance s'arrête d'elle-même (« no-speech ») ; on espace donc les
+       redémarrages, et après VO_SILENCES_MAX tours muets on passe en veille
+       (le micro se rouvre d'un appui) au lieu de biper sans fin. */
+    let voSilences = 0;
+    const VO_SILENCES_MAX = 6;
+    function voDelaiReprise() { return Math.min(400 * Math.pow(2, voSilences), 5000); }
+    let voNotes = ''; // carnet : tout ce qui a été dicté et pas encore trié
+
+    function speechDispo() { return !!(window.SpeechRecognition || window.webkitSpeechRecognition); }
+    // Voix de Jarvis : française MASCULINE (les voix se chargent en asynchrone)
+    let voixJarvis = null;
+    const VOIX_MASC_FR = ['thomas', 'paul', 'nicolas', 'henri', 'guillaume', 'daniel', 'yannick', 'mathieu', 'google français'];
+    function choisirVoixJarvis() {
+      try {
+        const voix = speechSynthesis.getVoices();
+        if (!voix || !voix.length) return;
+        const fr = voix.filter(v => /fr(-|_)?/i.test(v.lang));
+        voixJarvis =
+          fr.find(v => VOIX_MASC_FR.some(n => v.name.toLowerCase().includes(n))) ||
+          fr.find(v => /(^|[^e])homme|male|masculin/i.test(v.name)) ||
+          fr.find(v => !/(f[ée]minin|female|amelie|amélie|audrey|marie|virginie|julie|chantal)/i.test(v.name)) ||
+          fr[0] || null;
+      } catch (e) {}
+    }
+    try { choisirVoixJarvis(); speechSynthesis.onvoiceschanged = choisirVoixJarvis; } catch (e) {}
+
+    function parler(txt, onDone) {
+      try {
+        speechSynthesis.cancel();
+        if (!voixJarvis) choisirVoixJarvis();
+        const u = new SpeechSynthesisUtterance(txt);
+        u.lang = 'fr-FR';
+        if (voixJarvis) u.voice = voixJarvis;
+        u.pitch = 0.9;  // timbre légèrement grave = humanoïde masculin sympa
+        u.rate = 1.02;
+        if (onDone) { u.onend = onDone; u.onerror = onDone; }
+        speechSynthesis.speak(u);
+      } catch (e) { if (onDone) onDone(); }
+    }
+    async function voWakeLockOn() { try { if ('wakeLock' in navigator) voWakeLock = await navigator.wakeLock.request('screen'); } catch (e) {} }
+    function voWakeLockOff() { try { if (voWakeLock) { voWakeLock.release(); voWakeLock = null; } } catch (e) {} }
+    function voSet(s, t) {
+      if (s !== null) document.getElementById('vo-status').textContent = s;
+      if (t !== null) document.getElementById('vo-transcript').textContent = t;
+    }
+
+    function voOpen() {
+      document.getElementById('vo-overlay').classList.add('open');
+      document.getElementById('vo-result').classList.add('hidden');
+      if (!speechDispo()) { voSet('⚠ Dictée non disponible dans ce navigateur (essaie Chrome ou Safari)', ''); return; }
+      voContinu = true; voPause = false; voSilences = 0;
+      voWakeLockOn();
+      voSet('👋 Je suis Jarvis, votre chatbot', voNotes.trim());
+      parler('Je suis Jarvisse, votre chatbot.', () => setTimeout(voEcouter, 200));
+      // filet : si la synthèse vocale est bloquée par le navigateur, on écoute quand même
+      setTimeout(() => { if (voContinu && !voRec && !voBusy) voEcouter(); }, 2500);
+    }
+    function voClose() {
+      if (voNotes.trim() && !voBusy) {
+        if (confirm('Des observations dictées ne sont pas encore triées.\n\nOK : je les trie et je les ajoute avant de fermer.\nAnnuler : je les abandonne.')) {
+          voTrierMaintenant(true);
+          return;
+        }
+        voNotes = '';
+        voMajTrierBtn();
+      }
+      voContinu = false; voPause = false;
+      if (voRec) { try { voRec.stop(); } catch (e) {} voRec = null; }
+      try { speechSynthesis.cancel(); } catch (e) {}
+      voWakeLockOff();
+      document.getElementById('vo-mic').classList.remove('ecoute');
+      document.getElementById('vo-overlay').classList.remove('open');
+    }
+
+    /* ---- Mot d'appel « Jarvis » : RETIRÉ (2026-07-30) ----------------------
+       L'écoute de fond permanente obligeait à redémarrer le micro en boucle, et
+       Chrome joue un bip à CHAQUE démarrage → bip toutes les secondes. Aucune API
+       ne permet de couper ce bip. Le micro ne s'ouvre donc plus que sur action :
+       bouton 🚗 Mode voiture.
+       On purge l'ancien réglage pour stopper l'écoute chez ceux qui l'avaient activée. */
+    try { localStorage.removeItem('crhse_jarvis'); } catch (e) {}
+
+    function voMajTrierBtn(pendantSession) {
+      const plein = !!((voNotes + ' ' + (pendantSession || '')).trim());
+      document.getElementById('vo-trier').classList.toggle('hidden', !plein);
+    }
+    function voMicTap() {
+      if (voBusy) return;
+      if (!speechDispo()) { voSet('⚠ Dictée non disponible dans ce navigateur', ''); return; }
+      voSilences = 0; // toute action de l'utilisateur relance la cadence normale
+      if (!voContinu) { voContinu = true; voPause = false; voEcouter(); return; }
+      voPause = !voPause;
+      if (voPause) {
+        if (voRec) { try { voRec.stop(); } catch (e) {} }
+        voSet('⏸ En pause — appuie sur le micro pour reprendre', '');
+      } else {
+        document.getElementById('vo-result').classList.add('hidden');
+        voEcouter();
+      }
+    }
+
+    function voEcouter() {
+      if (!voContinu || voPause || voBusy || voRec) return;
+      if (!document.getElementById('vo-overlay').classList.contains('open')) return;
+      try { if (speechSynthesis.speaking) { setTimeout(voEcouter, 800); return; } } catch (e) {}
+      const mic = document.getElementById('vo-mic');
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      let rec;
+      try { rec = new SR(); } catch (e) { return; }
+      rec.lang = 'fr-FR'; rec.interimResults = true; rec.continuous = true; rec.maxAlternatives = 1;
+      voRec = rec;
+      voSet(voNotes.trim() ? '🎙 Je continue de noter — dis « Terminé » pour trier' : '🎙 Je t\'écoute — dicte librement, dis « Terminé » à la fin', voNotes.trim());
+      voMajTrierBtn();
+      mic.classList.add('ecoute');
+      let sessionFinals = '', done = false;
+
+      // Les acquis de cette session d'écoute rejoignent le carnet
+      const commettre = () => {
+        if (sessionFinals.trim()) voNotes = (voNotes + ' ' + sessionFinals).replace(/\s+/g, ' ').trimStart();
+        sessionFinals = '';
+        voMajTrierBtn();
+      };
+
+      rec.onresult = e => {
+        let finals = '', interim = '', dernierFinal = '';
+        for (let i = 0; i < e.results.length; i++) {
+          const seg = e.results[i][0].transcript;
+          if (e.results[i].isFinal) { finals += seg + ' '; dernierFinal = seg; }
+          else interim += seg;
+        }
+        sessionFinals = finals;
+        const df = dernierFinal.trim();
+
+        // « Terminé » prononcé seul → on trie tout le carnet
+        if (df && CRO_FIN.test(df)) {
+          done = true;
+          sessionFinals = finals.slice(0, finals.length - (dernierFinal.length + 1)); // sans le mot de fin
+          commettre();
+          try { rec.stop(); } catch (err) {}
+          if (voNotes.trim()) voTrierMaintenant();
+          else { voSet('Rien à trier — je t\'écoute', ''); setTimeout(voEcouter, 400); }
+          return;
+        }
+
+        // « Nouveau CR [chantier X] » → local ; le carnet en cours est trié d'abord
+        const exN = df ? CRO_NEW.exec(df) : null;
+        if (exN) {
+          done = true;
+          sessionFinals = finals.slice(0, finals.length - (dernierFinal.length + 1));
+          commettre();
+          try { rec.stop(); } catch (err) {}
+          const reste = df.slice(exN.index + exN[0].length);
+          if (voNotes.trim()) voTrierMaintenant(false, () => voNouveauCR(reste));
+          else voNouveauCR(reste);
+          return;
+        }
+
+        if (finals.trim() || interim.trim()) voSilences = 0; // on parle : cadence normale
+        const affiche = (voNotes + ' ' + finals + interim).replace(/\s+/g, ' ').trim();
+        if (affiche) voSet('📝 Je note… (dis « Terminé » quand tu as tout dicté)', affiche);
+        voMajTrierBtn(finals);
+      };
+      rec.onerror = ev => {
+        // erreurs définitives : on arrête la boucle plutôt que de biper en boucle
+        if (ev.error === 'not-allowed' || ev.error === 'service-not-allowed' || ev.error === 'audio-capture') {
+          voContinu = false;
+          mic.classList.remove('ecoute');
+          voSet('⚠ Micro indisponible — autorise-le puis appuie sur le micro', '');
+          return;
+        }
+        if (ev.error === 'no-speech' || ev.error === 'network') voSilences++;
+      };
+      rec.onend = () => {
+        voRec = null;
+        mic.classList.remove('ecoute');
+        if (!done) {
+          const eutParole = !!sessionFinals.trim();
+          commettre(); // un blanc ne perd RIEN : le carnet est conservé
+          if (eutParole) voSilences = 0; else voSilences++;
+          if (!voContinu || voPause || voBusy) return;
+          if (voSilences >= VO_SILENCES_MAX) { // silence prolongé : veille, plus aucun bip
+            voPause = true;
+            voSet('⏸ En veille (aucune parole détectée) — appuie sur le micro pour reprendre', voNotes.trim());
+            return;
+          }
+          setTimeout(voEcouter, voDelaiReprise());
+        }
+      };
+      try { rec.start(); } catch (e) { voRec = null; mic.classList.remove('ecoute'); }
+    }
+
+    /* Envoi du carnet au tri IA (bouton vert ou « Terminé ») */
+    function voTrierMaintenant(fermerApres, ensuite) {
+      if (voBusy) return;
+      if (voRec) { try { voRec.stop(); } catch (e) {} voRec = null; }
+      const texte = voNotes.trim();
+      if (!texte) { if (ensuite) ensuite(); return; }
+      voTraiterLot(texte, fermerApres, ensuite);
+    }
+
+    /* « Nouveau CR » dicté : bascule sur un CR vierge, l'actuel reste en brouillon.
+       On peut préciser le chantier : « nouveau CR chantier Canal de la Sambre ». */
+    function voNouveauCR(reste) {
+      const mic = document.getElementById('vo-mic');
+      mic.classList.remove('ecoute');
+      voRec = null;
+      let chantier = String(reste || '').replace(/^[\s:,.!?]+/, '').replace(/^(pour|sur|au|à|chantier)\s+/i, '').trim();
+      const b = nouveauBrouillon(chantier);
+      const resu = document.getElementById('vo-result');
+      resu.innerHTML = '📝 <b>Nouveau CR ouvert</b> : ' + b.crNum + (chantier ? ' — ' + chantier : '') + '<br>Le précédent reste en brouillon.';
+      resu.classList.remove('hidden');
+      voSet('Nouveau CR prêt ! Je t\'écoute…', '');
+      parler('Nouveau CR ouvert' + (chantier ? ' pour ' + chantier : '') + '. Je t\'écoute.', () => setTimeout(voEcouter, 250));
+    }
+
+    async function voTraiterLot(texte, fermerApres, ensuite) {
+      const mic = document.getElementById('vo-mic');
+      mic.classList.remove('ecoute');
+      voBusy = true; mic.disabled = true;
+      document.getElementById('vo-trier').classList.add('hidden');
+      voSet('🤖 Je trie tes observations…', '« ' + texte + ' »');
+      try {
+        const r = await fetch(IA_ENDPOINT, { method: 'POST', body: JSON.stringify({
+          action: 'ia', mode: 'crobs_lot', texte: texte,
+          observations: lireLignes().map((o, i) => ({ i: i, type: o.type, desc: o.desc }))
+        }) });
+        const j = await r.json();
+        if (!j || !j.ok) throw new Error((j && j.error) || 'réponse invalide');
+        const res = j.resultat || {};
+        const liste = Array.isArray(res.observations) ? res.observations : [];
+
+        // 1) Suppressions d'abord (les index se réfèrent au tableau AVANT ajouts), de bas en haut
+        const rows = document.querySelectorAll('#obs-tbody tr');
+        const supprimees = [];
+        liste.filter(o => o.op === 'supprimer' && o.index != null)
+          .sort((a, b) => b.index - a.index)
+          .forEach(o => {
+            const tr = rows[o.index];
+            if (tr) {
+              supprimees.push(tr.querySelector('.inp-desc').value || 'ligne ' + (o.index + 1));
+              tr.remove();
+            }
+          });
+        if (supprimees.length) { majCompteurs(); sauverBrouillon(); }
+
+        // 2) Ajouts
+        const nb = { PP: 0, PA: 0, CD: 0, AD: 0 };
+        let aVerifier = 0;
+        const details = [];
+        liste.filter(o => (o.op || 'ajouter') === 'ajouter' && o.description).forEach(o => {
+          const type = ['PP', 'PA', 'CD', 'AD'].indexOf(o.type) >= 0 ? o.type : 'PA';
+          nb[type]++;
+          const conf = Math.round(o.confiance || 0);
+          if (conf && conf < 95) aVerifier++;
+          ajouterObs({
+            type: type,
+            desc: o.description,
+            action: type === 'PP' ? '' : (o.action || ''),
+            domaine: o.domaine || '',
+            impact: o.impact || '',
+            statut: (type !== 'PP' && (o.action || '')) ? 'A planifier' : ''
+          }, false);
+          details.push('<b>' + type + '</b> — ' + echapper(o.description) + (conf && conf < 95 ? ' <i>(à vérifier)</i>' : ''));
+        });
+
+        const total = nb.PP + nb.PA + nb.CD + nb.AD;
+        const resu = document.getElementById('vo-result');
+        resu.innerHTML =
+          (total ? '✅ <b>' + total + ' observation' + (total > 1 ? 's' : '') + ' ajoutée' + (total > 1 ? 's' : '') + '</b><br>' + details.join('<br>') : '') +
+          (supprimees.length ? (total ? '<br>' : '') + '🗑 Supprimé : ' + supprimees.map(echapper).join(' · ') : '') +
+          (!total && !supprimees.length ? '🤔 ' + echapper(res.reponse || 'Je n\'ai pas reconnu d\'observation — redis-les') : '');
+        resu.classList.remove('hidden');
+
+        voNotes = ''; // le carnet est traité
+        voMajTrierBtn();
+
+        const parts = [];
+        if (nb.PP) parts.push(nb.PP + ' point' + (nb.PP > 1 ? 's' : '') + ' positif' + (nb.PP > 1 ? 's' : ''));
+        if (nb.PA) parts.push(nb.PA + ' point' + (nb.PA > 1 ? 's' : '') + ' d\'amélioration');
+        if (nb.CD) parts.push(nb.CD + ' condition' + (nb.CD > 1 ? 's' : '') + ' dangereuse' + (nb.CD > 1 ? 's' : ''));
+        if (nb.AD) parts.push(nb.AD + ' acte' + (nb.AD > 1 ? 's' : '') + ' dangereux');
+        let phrase = total ? total + ' observation' + (total > 1 ? 's' : '') + ' ajoutée' + (total > 1 ? 's' : '') + ' : ' + parts.join(', ') : '';
+        if (supprimees.length) phrase += (phrase ? '. ' : '') + supprimees.length + ' ligne' + (supprimees.length > 1 ? 's' : '') + ' supprimée' + (supprimees.length > 1 ? 's' : '');
+        if (aVerifier) phrase += '. ' + aVerifier + ' à vérifier au bureau';
+        if (!phrase) phrase = res.reponse || 'Je n\'ai pas reconnu d\'observation, tu peux les redire ?';
+
+        voSet(total || supprimees.length ? 'C\'est trié ! Je t\'écoute pour la suite…' : 'Je t\'écoute…', '');
+        parler(phrase, () => {
+          if (fermerApres) { voClose(); return; }
+          if (ensuite) { ensuite(); return; }
+          setTimeout(voEcouter, 250);
+        });
+      } catch (e) {
+        // le carnet N'EST PAS perdu : voNotes est conservé tel quel
+        voSet('⚠ IA injoignable — tes notes sont conservées, redis « Terminé » pour réessayer', voNotes);
+        voMajTrierBtn();
+        parler('Erreur, je n\'ai pas pu joindre l\'IA. Tes notes sont conservées.', () => setTimeout(voEcouter, 250));
+      } finally {
+        voBusy = false; mic.disabled = false;
+        setTimeout(voEcouter, 8000); // filet de sécurité
+      }
+    }
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible' && document.getElementById('vo-overlay').classList.contains('open') && voContinu && !voPause) {
+        voWakeLockOn();
+        voEcouter();
+      }
+    });
+
+    // ========================================================
+    // INITIALISATION (multi-brouillons + migration de l'ancien brouillon)
+    // ========================================================
+    (function initBrouillons() {
+      try {
+        const ancien = localStorage.getItem('crhse_brouillon_v1');
+        if (ancien && !brListe().length) {
+          const v1 = JSON.parse(ancien);
+          v1.id = brUid(); v1.envoye = false; v1.majLe = new Date().toISOString();
+          brEcrireListe([v1]);
+          localStorage.removeItem('crhse_brouillon_v1');
+        }
+      } catch (e) {}
+      const l = brListe();
+      if (l.length) {
+        const cid = localStorage.getItem(BR_COURANT_KEY);
+        const b = l.find(x => x.id === cid) || l.slice().sort((a, c) => (c.majLe || '').localeCompare(a.majLe || ''))[0];
+        remplirFormulaire(b);
+        if (l.length > 1) toast('📂 ' + l.length + ' CR en brouillon — navigue avec le sélecteur en haut', 'success');
+      } else {
+        nouveauBrouillon();
+      }
+    })();
+  </script>
+  <!-- VUE RAPPORT : générée à la volée pour l'export PDF / l'impression -->
+  <div id="print-view"></div>
+
+  <script>
+    // ========================================================
+    // EXPORT PDF — construit un vrai rapport (pas le formulaire)
+    // ========================================================
+    const PV_TYPES = { PP: 'Point Positif', PA: "Point d'Amélioration", CD: 'Condition Dangereuse', AD: 'Acte Dangereux' };
+    const TITRE_ONGLET = document.title;
+
+    // Nom d'enregistrement du document : 2026-07-23-CR HSE-Faucardage Saint Jean de Losne
+    function titreDocument() {
+      const date = document.getElementById('date-visite').value || new Date().toISOString().slice(0, 10);
+      const activite = (document.getElementById('activite').value || '').trim();
+      const chantier = (document.getElementById('chantier').value || '').trim();
+      const fin = [activite, chantier].filter(Boolean).join(' ');
+      return (date + '-CR HSE' + (fin ? '-' + fin : '')).replace(/[\\/:*?"<>|]/g, ' ').replace(/\s+/g, ' ').trim();
+    }
+
+    function echapper(t) {
+      const d = document.createElement('div');
+      d.textContent = t == null ? '' : String(t);
+      return d.innerHTML;
+    }
+
+    function construirePrintView() {
+      const pv = document.getElementById('print-view');
+      if (!pv) return;
+      const d = collecterDonnees();
+      const fmtDate = v => { if (!v) return '—'; const p = v.split('-'); return p.length === 3 ? p[2] + '/' + p[1] + '/' + p[0] : v; };
+
+      let h = '<div class="pv-entete"><div><h1>OBSERVATIONS HSE</h1><p>Compte Rendu de Visite Terrain — CDES</p></div>' +
+        '<div class="pv-numcr"><div class="lib">N° CR</div><div class="val">' + echapper(d.crNum) + '</div></div></div>';
+
+      h += '<table class="pv-infos"><tr>' +
+        '<td><b>Date de visite</b>' + fmtDate(d.date) + '</td>' +
+        '<td><b>Chantier</b>' + echapper(d.chantier || '—') + '</td>' +
+        '<td><b>Activité</b>' + echapper(d.activite || '—') + '</td>' +
+        '<td><b>Conducteur de travaux</b>' + echapper(d.conducteur || '—') + '</td>' +
+        '<td><b>Visiteur HSE</b>' + echapper(d.visiteur || '—') + '</td>' +
+        '</tr></table>';
+
+      // Photos du chantier : la 1re en pleine largeur (page de garde), les suivantes en grille
+      const photosChantier = Array.from(document.querySelectorAll('#photos-chantier-preview .photo-thumb img')).map(i => i.src);
+      if (photosChantier.length) {
+        h += '<div class="pv-titre-section">Photos du chantier</div>';
+        h += '<img class="pv-photo-garde" src="' + photosChantier[0] + '">';
+        if (photosChantier.length > 1) {
+          h += '<div class="pv-photos-grille">' + photosChantier.slice(1).map(s => '<img src="' + s + '">').join('') + '</div>';
+        }
+      }
+
+      const lignes = Array.from(document.querySelectorAll('#obs-tbody tr'));
+      const nb = { PP: 0, PA: 0, CD: 0, AD: 0 };
+      d.observations.forEach(o => { if (nb[o.type] != null) nb[o.type]++; });
+
+      h += '<div class="pv-titre-section">Observations HSE</div>';
+      h += '<div class="pv-compteurs">' + ['PP', 'PA', 'CD', 'AD'].map(t => '<span class="' + t + '">' + t + ' : ' + nb[t] + '</span>').join('') + '</div>';
+
+      d.observations.forEach((o, i) => {
+        if (!String(o.description || '').trim() && !String(o.action || '').trim()) return; // ligne vide non imprimée
+        const type = PV_TYPES[o.type] ? o.type : 'PA';
+        const photo = lignes[i] ? lignes[i].querySelector('.photo-preview-container img') : null;
+        const meta = [];
+        if (o.domaine) meta.push('Domaine : ' + echapper(o.domaine));
+        if (o.impact) meta.push('Impact HSE : ' + echapper(o.impact));
+        if (o.transversal) meta.push('Transversal : ' + echapper(o.transversal));
+        if (o.echeance) meta.push('Échéance : ' + fmtDate(o.echeance));
+        if (o.statut) meta.push('Statut : ' + echapper(o.statut));
+        h += '<div class="pv-obs ' + type + '">' +
+          '<div class="pv-obs-tete"><span class="pv-badge ' + type + '">' + type + ' — ' + PV_TYPES[type] + '</span>' +
+          '<span class="pv-obs-num">Obs. ' + o.nObs + '</span></div>' +
+          '<div class="pv-obs-corps"><div class="pv-obs-texte">' +
+          '<div class="desc">' + echapper(o.description) + '</div>' +
+          (String(o.action || '').trim() ? '<div class="act"><b>Action corrective :</b> ' + echapper(o.action) + '</div>' : '') +
+          (meta.length ? '<div class="pv-obs-meta">' + meta.join(' · ') + '</div>' : '') +
+          '</div>' + (photo ? '<img src="' + photo.src + '">' : '') + '</div></div>';
+      });
+
+      const mnt = new Date();
+      h += '<div class="pv-pied">Édité le ' + mnt.toLocaleDateString('fr-FR') + ' à ' + mnt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) + ' — CDES · Observations HSE</div>';
+
+      pv.innerHTML = h;
+      document.body.classList.add('mode-rapport');
+      document.title = titreDocument(); // = nom de fichier proposé à l'enregistrement du PDF
+    }
+
+    // Ctrl+P / menu Imprimer du navigateur : le rapport se construit tout seul
+    window.addEventListener('beforeprint', construirePrintView);
+    window.addEventListener('afterprint', () => { document.title = TITRE_ONGLET; });
+  </script>
+
+  <script>
+    // Service worker → rend l'appli installable sur le téléphone (« Installer l'application »)
+    if ('serviceWorker' in navigator && location.protocol === 'https:') {
+      navigator.serviceWorker.register('swcr.js').catch(() => {});
+    }
+  </script>
+</body>
+</html>
