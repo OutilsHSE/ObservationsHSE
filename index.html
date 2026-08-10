@@ -427,6 +427,17 @@
       padding: 6px 2px;
     }
     .obs-poignee:active { cursor: grabbing; }
+
+    /* Ligne déjà sauvegardée au PA : badge ✓ + liseré vert (ne repartira pas) */
+    .obs-badge-pa { display: none; }
+    tr.obs-envoyee .obs-badge-pa {
+      display: inline-block;
+      color: #1B7A3D;
+      font-weight: 700;
+      font-size: .95rem;
+      margin-left: 2px;
+    }
+    tr.obs-envoyee td:first-child { box-shadow: inset 3px 0 0 #1B7A3D; }
     tr.en-deplacement { opacity: 0.35; }
     tr.drag-dessus td { border-top: 3px solid var(--bleu-accent) !important; }
     tr.drag-dessous td { border-bottom: 3px solid var(--bleu-accent) !important; }
@@ -1146,15 +1157,79 @@
     // ========================================================
     let obsCount = 0;
 
+    // Échappement HTML : tout texte venant d'un brouillon ou de l'IA passe par là
+    // avant d'être injecté dans le tableau (anti-XSS).
+    function escHtml(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+    /* ---------- Photos persistantes (IndexedDB) ----------
+       Les photos ne tenaient pas dans le brouillon localStorage : elles sont
+       désormais conservées dans IndexedDB (grande capacité), par CR, et
+       restaurées au chargement. Compression préalable pour rester léger. */
+    function idbOuvrir() {
+      return new Promise((res, rej) => {
+        const rq = indexedDB.open('crhse_photos', 1);
+        rq.onupgradeneeded = () => rq.result.createObjectStore('photos');
+        rq.onsuccess = () => res(rq.result);
+        rq.onerror = () => rej(rq.error);
+      });
+    }
+    async function idbEcrire(id, val) {
+      try { const db = await idbOuvrir(); await new Promise((res, rej) => { const t = db.transaction('photos', 'readwrite'); t.objectStore('photos').put(val, id); t.oncomplete = res; t.onerror = () => rej(t.error); }); } catch (e) {}
+    }
+    async function idbLire(id) {
+      try { const db = await idbOuvrir(); return await new Promise((res, rej) => { const t = db.transaction('photos', 'readonly'); const rq = t.objectStore('photos').get(id); rq.onsuccess = () => res(rq.result || null); rq.onerror = () => rej(rq.error); }); } catch (e) { return null; }
+    }
+    async function idbSupprimer(id) {
+      try { const db = await idbOuvrir(); await new Promise((res, rej) => { const t = db.transaction('photos', 'readwrite'); t.objectStore('photos').delete(id); t.oncomplete = res; t.onerror = () => rej(t.error); }); } catch (e) {}
+    }
+    // Compresse une image (max 1400 px, JPEG qualité 0.82) avant stockage/affichage
+    function compresserImage(dataUrl) {
+      return new Promise(res => {
+        const img = new Image();
+        img.onload = () => {
+          const max = 1400;
+          let w = img.width, h = img.height;
+          if (w > max || h > max) { const r = Math.min(max / w, max / h); w = Math.round(w * r); h = Math.round(h * r); }
+          const c = document.createElement('canvas'); c.width = w; c.height = h;
+          c.getContext('2d').drawImage(img, 0, 0, w, h);
+          try { res(c.toDataURL('image/jpeg', 0.82)); } catch (e) { res(dataUrl); }
+        };
+        img.onerror = () => res(dataUrl);
+        img.src = dataUrl;
+      });
+    }
+    // Photographie l'état des photos affichées → IndexedDB (appelé par flushBrouillon)
+    function photosDepuisDom() {
+      const obs = {};
+      document.querySelectorAll('#obs-tbody tr').forEach((tr, i) => {
+        const img = tr.querySelector('.photo-preview-container img');
+        if (img && /^data:image\//.test(img.src)) obs[i] = img.src;
+      });
+      const chantier = Array.from(document.querySelectorAll('#photos-chantier-preview .photo-thumb img'))
+        .map(im => im.src).filter(s => /^data:image\//.test(s));
+      return { obs: obs, chantier: chantier };
+    }
+    async function photosRestaurer(brId) {
+      const p = await idbLire(brId);
+      if (!p || brId !== brCourantId) return; // le CR affiché a changé entre-temps
+      const lignes = document.querySelectorAll('#obs-tbody tr');
+      Object.keys(p.obs || {}).forEach(i => {
+        const tr = lignes[i];
+        if (tr) attacherPhotoData(tr.querySelector('.obs-photo-cell'), p.obs[i]);
+      });
+      (p.chantier || []).forEach(d => afficherPhotoChantier(d));
+    }
+
     function ajouterObs(data = {}, focus = true) {
       obsCount++;
       const tbody = document.getElementById('obs-tbody');
       const tr = document.createElement('tr');
       tr.className = data.type || 'PP';
+      if (data.envoyee) { tr.dataset.envoyee = '1'; tr.classList.add('obs-envoyee'); }
 
       tr.innerHTML = `
         <td class="col-move no-print">
-          <span class="obs-poignee" title="Glisser pour déplacer la ligne">⠿</span>
+          <span class="obs-poignee" title="Glisser pour déplacer la ligne">⠿</span><span class="obs-badge-pa" title="Déjà sauvegardée au PA — ne sera pas renvoyée">✓</span>
         </td>
         <td class="col-type">
           <select class="sel-type" onchange="majLigneType(this.closest('tr'))">
@@ -1165,10 +1240,10 @@
           </select>
         </td>
         <td class="col-desc">
-          <textarea class="inp-desc" placeholder="Description de l'observation..." oninput="autoH(this)">${data.desc||''}</textarea>
+          <textarea class="inp-desc" placeholder="Description de l'observation..." oninput="autoH(this)">${escHtml(data.desc)}</textarea>
         </td>
         <td class="col-action">
-          <textarea class="can-disable inp-action" placeholder="Action à mener..." oninput="autoH(this)">${data.action||''}</textarea>
+          <textarea class="can-disable inp-action" placeholder="Action à mener..." oninput="autoH(this)">${escHtml(data.action)}</textarea>
         </td>
         <td class="col-domaine">
           <select class="can-disable inp-domaine">
@@ -1196,7 +1271,7 @@
           </select>
         </td>
         <td class="col-echeance">
-          <input type="date" class="can-disable inp-echeance" value="${data.echeance||''}">
+          <input type="date" class="can-disable inp-echeance" value="${escHtml(data.echeance)}">
         </td>
         <td class="col-statut">
           <select class="can-disable inp-statut">
@@ -1232,6 +1307,39 @@
       sauverBrouillon();
     }
 
+    // Affiche une photo (déjà en dataURL) dans la cellule d'une observation
+    function attacherPhotoData(cell, dataUrl) {
+      const container = cell.querySelector('.photo-preview-container');
+      const btn = cell.querySelector('.obs-photo-btn');
+      const input = cell.querySelector('.inp-photo');
+
+      container.innerHTML = '';
+      const wrap = document.createElement('div');
+      wrap.className = 'obs-photo-preview';
+
+      const img = document.createElement('img');
+      img.src = dataUrl;
+      img.title = 'Cliquer pour voir';
+      img.onclick = () => voirPhoto(dataUrl);
+
+      const del = document.createElement('button');
+      del.className = 'photo-del-btn no-print';
+      del.textContent = '✕';
+      del.onclick = (ev) => {
+        ev.stopPropagation();
+        container.innerHTML = '';
+        btn.style.display = 'inline-block';
+        if (input) input.value = '';
+        sauverBrouillon(); // la suppression est retenue dans le brouillon photos
+      };
+
+      wrap.appendChild(img);
+      wrap.appendChild(del);
+      container.appendChild(wrap);
+
+      btn.style.display = 'none';
+    }
+
     // Attacher une photo à une observation (clic OU glisser-déposer)
     function attacherPhotoObs(cell, file) {
       if (!file) return;
@@ -1239,35 +1347,7 @@
 
       const reader = new FileReader();
       reader.onload = function(e) {
-        const container = cell.querySelector('.photo-preview-container');
-        const btn = cell.querySelector('.obs-photo-btn');
-        const input = cell.querySelector('.inp-photo');
-
-        // Créer le preview
-        container.innerHTML = '';
-        const wrap = document.createElement('div');
-        wrap.className = 'obs-photo-preview';
-
-        const img = document.createElement('img');
-        img.src = e.target.result;
-        img.title = 'Cliquer pour voir';
-        img.onclick = () => voirPhoto(e.target.result);
-
-        const del = document.createElement('button');
-        del.className = 'photo-del-btn no-print';
-        del.textContent = '✕';
-        del.onclick = (ev) => {
-          ev.stopPropagation();
-          container.innerHTML = '';
-          btn.style.display = 'inline-block';
-          if (input) input.value = '';
-        };
-
-        wrap.appendChild(img);
-        wrap.appendChild(del);
-        container.appendChild(wrap);
-
-        btn.style.display = 'none';
+        compresserImage(e.target.result).then(d => { attacherPhotoData(cell, d); sauverBrouillon(); });
       };
       reader.readAsDataURL(file);
     }
@@ -1336,10 +1416,16 @@
       btn.innerHTML = '⏳ Envoi en cours...';
       btn.disabled = true;
 
-      let errors = 0;
-      let success = 0;
+      // Chaque LIGNE se souvient d'avoir été envoyée (badge ✓) : un nouvel appui
+      // n'envoie QUE les lignes manquantes → plus jamais de doublons dans le PA.
+      const lignesDom = Array.from(document.querySelectorAll('#obs-tbody tr'));
+      let errors = 0, success = 0, deja = 0;
 
-      for (const obs of data.observations) {
+      for (let i = 0; i < data.observations.length; i++) {
+        const obs = data.observations[i];
+        const tr = lignesDom[i];
+        if (tr && tr.dataset.envoyee === '1') { deja++; continue; }
+        btn.innerHTML = '⏳ Envoi ' + (success + errors + deja + 1) + ' / ' + data.observations.length + '…';
         try {
           const payload = {
             nCR: data.crNum,
@@ -1355,7 +1441,8 @@
             impact: obs.impact,
             transversal: obs.transversal,
             echeance: obs.echeance,
-            statut: obs.statut
+            statut: obs.statut,
+            ref: brCourantId + '-' + i // référence unique : permettra une déduplication côté Sheet
           };
 
           const resp = await fetch(WEBHOOK_URL, {
@@ -1364,8 +1451,17 @@
             redirect: 'follow'
           });
 
-          if (resp.ok) { success++; }
-          else { errors++; console.error('Erreur obs', obs.nObs, resp.status); }
+          // Un Apps Script en panne peut répondre HTTP 200 avec une PAGE D'ERREUR :
+          // on lit la réponse au lieu de croire le code HTTP sur parole.
+          const texte = await resp.text();
+          const pageErreur = /^\s*</.test(texte) && /(erreur|error|exception|autorisation|authorization|scripterror)/i.test(texte);
+          if (resp.ok && !pageErreur) {
+            success++;
+            if (tr) { tr.dataset.envoyee = '1'; tr.classList.add('obs-envoyee'); }
+          } else {
+            errors++;
+            console.error('Erreur obs', obs.nObs, resp.status, texte.slice(0, 120));
+          }
 
         } catch (e) {
           errors++;
@@ -1373,16 +1469,18 @@
         }
       }
 
+      flushBrouillon(); // les marques ✓ par ligne sont retenues dans le brouillon
+
       if (errors === 0) {
-        toast('✅ ' + success + ' observation(s) sauvegardée(s) au PA ✓', 'success');
+        toast('✅ ' + success + ' observation(s) sauvegardée(s) au PA ✓' + (deja ? ' (' + deja + ' déjà au PA, non renvoyée' + (deja > 1 ? 's' : '') + ')' : ''), 'success');
         // marquer ce CR comme envoyé (✓ dans le sélecteur) — il reste consultable/imprimable
         const l = brListe();
         const b = l.find(x => x.id === brCourantId);
         if (b) { b.envoye = true; b.majLe = new Date().toISOString(); brEcrireListe(l); majCrSelect(); }
-      } else if (success > 0) {
-        toast('⚠️ ' + success + ' envoyées, ' + errors + ' erreur(s)', 'error');
+      } else if (success > 0 || deja > 0) {
+        toast('⚠️ ' + success + ' envoyée(s), ' + errors + ' en échec — re-clique : SEULES les manquantes partiront (pas de doublon)', 'error');
       } else {
-        toast('❌ Erreur d\'envoi. Vérifiez votre connexion.', 'error');
+        toast('❌ Erreur d\'envoi. Vérifiez votre connexion puis re-cliquez : rien ne partira en double.', 'error');
       }
 
       btn.innerHTML = '☁️ Sauvegarder les données (PA)';
@@ -1428,25 +1526,30 @@
       document.body.appendChild(modal);
     }
 
-    function ajouterPhotosChantier(files) {
+    // Affiche une photo de chantier (déjà en dataURL) dans la galerie
+    function afficherPhotoChantier(dataUrl) {
       const preview = document.getElementById('photos-chantier-preview');
+      const wrap = document.createElement('div');
+      wrap.className = 'photo-thumb';
+      const img = document.createElement('img');
+      img.src = dataUrl;
+      img.title = 'Cliquer pour agrandir';
+      img.onclick = ev => { ev.preventDefault(); voirPhoto(dataUrl); };
+      const btn = document.createElement('button');
+      btn.className = 'del-photo no-print';
+      btn.textContent = '✕';
+      btn.onclick = ev => { ev.preventDefault(); wrap.remove(); sauverBrouillon(); };
+      wrap.appendChild(img);
+      wrap.appendChild(btn);
+      preview.appendChild(wrap);
+    }
+
+    function ajouterPhotosChantier(files) {
       Array.from(files).forEach(file => {
         if (file.type && file.type.indexOf('image/') !== 0) return; // on ignore les non-images déposées
         const reader = new FileReader();
         reader.onload = e => {
-          const wrap = document.createElement('div');
-          wrap.className = 'photo-thumb';
-          const img = document.createElement('img');
-          img.src = e.target.result;
-          img.title = 'Cliquer pour agrandir';
-          img.onclick = ev => { ev.preventDefault(); voirPhoto(e.target.result); };
-          const btn = document.createElement('button');
-          btn.className = 'del-photo no-print';
-          btn.textContent = '✕';
-          btn.onclick = ev => { ev.preventDefault(); wrap.remove(); };
-          wrap.appendChild(img);
-          wrap.appendChild(btn);
-          preview.appendChild(wrap);
+          compresserImage(e.target.result).then(d => { afficherPhotoChantier(d); sauverBrouillon(); });
         };
         reader.readAsDataURL(file);
       });
@@ -1570,7 +1673,16 @@
     let brTimer = null, brPret = false, brCourantId = null;
 
     function brListe() { try { return JSON.parse(localStorage.getItem(BR_LISTE_KEY)) || []; } catch (e) { return []; } }
-    function brEcrireListe(l) { try { localStorage.setItem(BR_LISTE_KEY, JSON.stringify(l)); } catch (e) {} }
+    function brEcrireListe(l) {
+      try { localStorage.setItem(BR_LISTE_KEY, JSON.stringify(l)); return true; }
+      catch (e) {
+        // mémoire du navigateur pleine : on le DIT au lieu d'afficher « enregistré »
+        const info = document.getElementById('brouillon-info');
+        if (info) info.textContent = '⚠ Mémoire du navigateur pleine — les dernières modifications ne sont PAS enregistrées en brouillon';
+        toast('⚠ Brouillon non enregistré : mémoire pleine. Envoie ou supprime un ancien CR.', 'error');
+        return false;
+      }
+    }
     function brUid() { return 'cr' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
     function dateISO() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
 
@@ -1583,7 +1695,8 @@
         impact: tr.querySelector('.inp-impact').value,
         transv: tr.querySelector('.inp-transv').value,
         echeance: tr.querySelector('.inp-echeance').value,
-        statut: tr.querySelector('.inp-statut').value
+        statut: tr.querySelector('.inp-statut').value,
+        envoyee: tr.dataset.envoyee === '1'
       }));
     }
 
@@ -1603,17 +1716,20 @@
 
     function flushBrouillon() {
       if (!brPret || !brCourantId) return;
-      clearTimeout(brTimer);
+      clearTimeout(brTimer); brTimer = null;
       const l = brListe();
       const i = l.findIndex(x => x.id === brCourantId);
       const b = formVersBrouillon(i >= 0 ? l[i] : null);
       if (i >= 0) l[i] = b; else l.push(b);
-      brEcrireListe(l);
+      const okEcrit = brEcrireListe(l);
       try { localStorage.setItem(BR_COURANT_KEY, brCourantId); } catch (e) {}
+      idbEcrire(brCourantId, photosDepuisDom()); // photos → IndexedDB (grande capacité)
       majCrSelect();
-      const h = new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-      document.getElementById('brouillon-info').textContent =
-        '💾 ' + l.length + ' CR en brouillon · enregistré à ' + h + ' — rien ne part au PA sans « Sauvegarder les données »';
+      if (okEcrit) {
+        const h = new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+        document.getElementById('brouillon-info').textContent =
+          '💾 ' + l.length + ' CR en brouillon (photos comprises) · enregistré à ' + h + ' — rien ne part au PA sans « Sauvegarder les données »';
+      }
     }
 
     function sauverBrouillon() {
@@ -1637,6 +1753,7 @@
       if (!(b.observations || []).length) ajouterObs({}, false);
       majCompteurs();
       try { localStorage.setItem(BR_COURANT_KEY, brCourantId); } catch (e) {}
+      photosRestaurer(b.id); // les photos du CR reviennent depuis IndexedDB
       brPret = true;
       majCrSelect();
     }
@@ -1646,8 +1763,8 @@
       const l = brListe().slice().sort((a, b) => (b.majLe || '').localeCompare(a.majLe || ''));
       sel.innerHTML = l.map(b => {
         const nb = (b.observations || []).filter(o => (o.desc || '').trim()).length;
-        return '<option value="' + b.id + '"' + (b.id === brCourantId ? ' selected' : '') + '>' +
-          (b.envoye ? '✓ ' : '') + (b.crNum || '?') + ' · ' + (b.chantier || 'sans chantier') + ' (' + nb + ' obs)</option>';
+        return '<option value="' + escHtml(b.id) + '"' + (b.id === brCourantId ? ' selected' : '') + '>' +
+          (b.envoye ? '✓ ' : '') + escHtml(b.crNum || '?') + ' · ' + escHtml(b.chantier || 'sans chantier') + ' (' + nb + ' obs)</option>';
       }).join('');
     }
 
@@ -1657,7 +1774,7 @@
       const b = brListe().find(x => x.id === id);
       if (b) {
         remplirFormulaire(b);
-        toast('📂 ' + (b.crNum || 'CR') + (b.chantier ? ' — ' + b.chantier : '') + ' chargé (photos non conservées en brouillon)', 'success');
+        toast('📂 ' + (b.crNum || 'CR') + (b.chantier ? ' — ' + b.chantier : '') + ' chargé, photos comprises', 'success');
       }
     }
 
@@ -1682,6 +1799,7 @@
         (b && b.envoye ? '\n(déjà sauvegardé au PA ✓)' : '\n⚠ Il n\'a PAS été sauvegardé au PA.'))) return;
       const reste = l.filter(x => x.id !== brCourantId);
       brEcrireListe(reste);
+      idbSupprimer(brCourantId); // ses photos partent avec lui
       brCourantId = null;
       if (reste.length) remplirFormulaire(reste.sort((a, c) => (c.majLe || '').localeCompare(a.majLe || ''))[0]);
       else nouveauBrouillon();
@@ -1691,6 +1809,9 @@
     // toute frappe ou changement dans la page alimente le brouillon
     document.querySelector('main').addEventListener('input', sauverBrouillon);
     document.querySelector('main').addEventListener('change', sauverBrouillon);
+    // filet : si on quitte l'appli pendant les 600 ms d'attente, le brouillon part quand même
+    window.addEventListener('pagehide', () => { if (brTimer) flushBrouillon(); });
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden' && brTimer) flushBrouillon(); });
 
     // ========================================================
     // MODE VOITURE — dictée mains libres (même moteur que le Planning HSE)
