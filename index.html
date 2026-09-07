@@ -908,6 +908,15 @@
             <option>Arthur VILLEMINOT</option>
           </select>
         </div>
+        <div class="field">
+          <label>Agence *</label>
+          <select id="agence">
+            <option value="">— Sélectionner —</option>
+            <option value="IDF">IDF — Île-de-France</option>
+            <option value="NA">NA — Nouvelle-Aquitaine</option>
+            <option value="BPL">BPL — Bretagne / Pays de la Loire</option>
+          </select>
+        </div>
       </div>
     </div>
 
@@ -1370,6 +1379,7 @@
       const chantier = document.getElementById('chantier').value;
       const activite = document.getElementById('activite').value;
       const conducteur = document.getElementById('conducteur').value;
+      const agence = document.getElementById('agence').value;
       const visiteur = document.getElementById('visiteur').value;
 
       const observations = [];
@@ -1380,6 +1390,7 @@
           chantier: chantier,
           activite: activite,
           conducteur: conducteur,
+          agence: agence,
           visiteur: visiteur,
           nObs: i + 1,
           type: tr.querySelector('.sel-type').value,
@@ -1393,7 +1404,7 @@
         });
       });
 
-      return { crNum, date, chantier, activite, conducteur, visiteur, observations };
+      return { crNum, date, chantier, activite, conducteur, agence, visiteur, observations };
     }
 
     // ========================================================
@@ -1404,6 +1415,12 @@
 
       if (!data.chantier.trim()) {
         toast('Veuillez renseigner le nom du chantier', 'error');
+        return;
+      }
+
+      if (!data.agence) {
+        toast("Veuillez sélectionner l'agence (IDF, NA ou BPL)", 'error');
+        document.getElementById('agence').focus();
         return;
       }
 
@@ -1433,6 +1450,7 @@
             chantier: data.chantier,
             activite: data.activite,
             conducteur: data.conducteur,
+            agence: data.agence,
             visiteur: data.visiteur,
             type: obs.type,
             description: obs.description,
@@ -1492,12 +1510,12 @@
     // ========================================================
     function exportExcel() {
       const data = collecterDonnees();
-      const rows = [['N° CR', 'Date', 'Chantier', 'Activité', 'Conducteur', 'N° Obs', 'Type', 'Description', 'Action corrective', 'Domaine', 'Impact HSE', 'Transversal', 'Échéance', 'Statut']];
+      const rows = [['N° CR', 'Date', 'Chantier', 'Agence', 'Activité', 'Conducteur', 'N° Obs', 'Type', 'Description', 'Action corrective', 'Domaine', 'Impact HSE', 'Transversal', 'Échéance', 'Statut']];
       data.observations.forEach(o => {
-        rows.push([o.nCR, o.dateVisite, o.chantier, o.activite, o.conducteur, o.nObs, o.type, o.description, o.action, o.domaine, o.impact, o.transversal, o.echeance, o.statut]);
+        rows.push([o.nCR, o.dateVisite, o.chantier, o.agence, o.activite, o.conducteur, o.nObs, o.type, o.description, o.action, o.domaine, o.impact, o.transversal, o.echeance, o.statut]);
       });
       const ws = XLSX.utils.aoa_to_sheet(rows);
-      ws['!cols'] = [14,12,22,18,20,6,6,45,45,14,12,10,12,12].map(w => ({wch:w}));
+      ws['!cols'] = [14,12,22,8,18,20,6,6,45,45,14,12,10,12,12].map(w => ({wch:w}));
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'Observations');
       XLSX.writeFile(wb, titreDocument() + '.xlsx');
@@ -1708,6 +1726,7 @@
         chantier: document.getElementById('chantier').value,
         activite: document.getElementById('activite').value,
         conducteur: document.getElementById('conducteur').value,
+        agence: document.getElementById('agence').value,
         observations: lireLignes(),
         envoye: existant ? !!existant.envoye : false,
         majLe: new Date().toISOString()
@@ -1746,6 +1765,7 @@
       document.getElementById('chantier').value = b.chantier || '';
       document.getElementById('activite').value = b.activite || '';
       document.getElementById('conducteur').value = b.conducteur || '';
+      document.getElementById('agence').value = b.agence || '';
       document.getElementById('visiteur').value = 'Justin HERVELIN';
       document.getElementById('obs-tbody').innerHTML = '';
       document.getElementById('photos-chantier-preview').innerHTML = '';
@@ -1782,7 +1802,7 @@
       flushBrouillon();
       const b = {
         id: brUid(), crNum: genererNumeroCR(), date: dateISO(),
-        chantier: chantier || '', activite: '', conducteur: '',
+        chantier: chantier || '', activite: '', conducteur: '', agence: '',
         observations: [], envoye: false, majLe: new Date().toISOString()
       };
       const l = brListe();
@@ -2196,6 +2216,7 @@
       h += '<table class="pv-infos"><tr>' +
         '<td><b>Date de visite</b>' + fmtDate(d.date) + '</td>' +
         '<td><b>Chantier</b>' + echapper(d.chantier || '—') + '</td>' +
+        '<td><b>Agence</b>' + echapper(d.agence || '—') + '</td>' +
         '<td><b>Activité</b>' + echapper(d.activite || '—') + '</td>' +
         '<td><b>Conducteur de travaux</b>' + echapper(d.conducteur || '—') + '</td>' +
         '<td><b>Visiteur HSE</b>' + echapper(d.visiteur || '—') + '</td>' +
