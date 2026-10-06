@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CR HSE — CDES</title>
+  <meta name="theme-color" content="#003A6E">
+  <link rel="manifest" href="crhse.webmanifest">
+  <link rel="apple-touch-icon" href="iconcr192.png">
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <link rel="stylesheet" href="css/cr.css">
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="header-inner">
+      <div class="header-logo">
+        <img src="https://cdes.pro/wp-content/uploads/2019/12/logo-alt-1.svg" alt="CDES" onerror="this.style.display='none'" style="min-width:0;min-height:0;">
+        <div class="header-title">
+          <h1>OBSERVATIONS HSE</h1>
+          <p>Compte Rendu de Visite Terrain</p>
+        </div>
+      </div>
+      <div class="header-cr">
+        <div class="cr-label">N° CR</div>
+        <div class="cr-value" id="cr-numero">—</div>
+      </div>
+    </div>
+  </header>
+
+  <main class="main">
+
+    <!-- SÉLECTEUR DE CR EN BROUILLON (multi-CR) -->
+    <div class="cr-switch no-print">
+      <label for="cr-select">📂 CR en cours :</label>
+      <select id="cr-select" onchange="chargerBrouillonId(this.value)"></select>
+      <button class="cr-btn" onclick="nouveauCR()" title="Ouvrir un nouveau CR (celui-ci reste en brouillon)">＋ Nouveau</button>
+      <button class="cr-btn cr-btn-del" onclick="supprimerCRCourant()" title="Supprimer ce CR du brouillon">🗑</button>
+    </div>
+
+    <div id="etat-branchement" class="no-print"></div>
+
+    <!-- SECTION 1 : INFORMATIONS CHANTIER -->
+    <div class="section">
+      <div class="section-title"><span class="dot"></span>Informations du chantier</div>
+      <div class="grid-4" style="margin-bottom:16px;">
+        <div class="field">
+          <label>Date de visite *</label>
+          <input type="date" id="date-visite">
+        </div>
+        <div class="field">
+          <label>Chantier *</label>
+          <input type="text" id="chantier" placeholder="Nom du chantier">
+        </div>
+        <div class="field">
+          <label>Activité</label>
+          <select id="activite">
+            <option value="">— Sélectionner —</option>
+            <option>Dragage</option>
+            <option>RCE</option>
+            <option>Arrachage</option>
+            <option>Restauration de berges</option>
+            <option>Faucardage</option>
+            <option>Fret Fluvial</option>
+            <option>Atelier</option>
+            <option>Bathymétrie / Topo</option>
+            <option>Equipements Portuaires</option>
+            <option>Dragage TEREOS</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Visiteur HSE</label>
+          <input type="text" id="visiteur" value="" placeholder="(rempli par le serveur)" readonly style="background:#f1f5f8;color:#456;cursor:default">
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="field">
+          <label>Conducteur de travaux / Responsable</label>
+          <select id="conducteur">
+            <option value="">— Sélectionner —</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Agence *</label>
+          <select id="agence">
+            <option value="">— Sélectionner —</option>
+            <option value="IDF">IDF — Île-de-France</option>
+            <option value="NA">NA — Nouvelle-Aquitaine</option>
+            <option value="BPL">BPL — Bretagne / Pays de la Loire</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 2 : PHOTOS CHANTIER -->
+    <div class="section">
+      <div class="section-title"><span class="dot"></span>Photos du chantier</div>
+      <label class="photo-zone" for="photos-chantier-input">
+        <div class="icon">📷</div>
+        <p>Cliquez ou glissez des photos du chantier ici</p>
+        <input type="file" id="photos-chantier-input" accept="image/*" multiple style="display:none">
+      </label>
+      <div class="photos-preview" id="photos-chantier-preview"></div>
+    </div>
+
+    <!-- SECTION 3 : OBSERVATIONS -->
+    <div class="section">
+      <div class="section-title"><span class="dot"></span>Observations HSE</div>
+
+      <!-- COMPTEURS -->
+      <div class="compteurs">
+        <div class="compteur PP">PP 👍 <span class="count" id="count-PP">0</span></div>
+        <div class="compteur PA">PA 📋 <span class="count" id="count-PA">0</span></div>
+        <div class="compteur CD">CD ⚠️ <span class="count" id="count-CD">0</span></div>
+        <div class="compteur AD">AD 🚫 <span class="count" id="count-AD">0</span></div>
+        <button class="btn-aide no-print" onclick="document.getElementById('modal-aide').classList.add('open')">
+          ? Aide
+        </button>
+      </div>
+
+      <!-- TABLEAU -->
+      <div class="obs-table-wrapper">
+        <table class="obs-table" id="obs-table">
+          <thead>
+            <tr>
+              <th class="col-move no-print"></th>
+              <th class="col-type">Type</th>
+              <th class="col-desc">Description</th>
+              <th class="col-action">Action corrective</th>
+              <th class="col-domaine">Domaine</th>
+              <th class="col-impact">Impact HSE</th>
+              <th class="col-transv">Transv.</th>
+              <th class="col-echeance">Échéance</th>
+              <th class="col-statut">Statut</th>
+              <th class="col-photo">Photo</th>
+              <th class="col-del no-print"></th>
+            </tr>
+          </thead>
+          <tbody id="obs-tbody"></tbody>
+        </table>
+      </div>
+
+      <button class="btn-add-obs no-print" onclick="ajouterObs()">
+        ＋ Ajouter une observation
+      </button>
+    </div>
+
+    <!-- BARRE D'ACTIONS -->
+    <div class="brouillon-info no-print" id="brouillon-info">💾 Brouillon local : rien ne part au PA tant que tu ne cliques pas « Sauvegarder les données »</div>
+    <div class="action-bar no-print">
+      <button class="btn btn-primary" onclick="voOpen()" style="background:#17232e">
+        🚗 Mode voiture
+      </button>
+      <button class="btn btn-success" onclick="envoyerSharePoint()">
+        ☁️ Sauvegarder les données (PA)
+      </button>
+      <button class="btn btn-warning" onclick="exportExcel()">
+        📊 Exporter Excel
+      </button>
+      <button class="btn btn-primary" onclick="construirePrintView(); window.print()">
+        🖨️ Exporter PDF
+      </button>
+      <button class="btn btn-secondary" onclick="nouveauCR()">
+        📝 Nouveau CR
+      </button>
+    </div>
+
+  </main>
+
+  <!-- MODALE AIDE -->
+  <div class="modal-overlay" id="modal-aide">
+    <div class="modal-box">
+      <button class="modal-close" onclick="document.getElementById('modal-aide').classList.remove('open')">✕</button>
+      <h2>Guide des observations HSE</h2>
+      <p style="font-size:0.88rem;color:#556;line-height:1.5;margin-bottom:12px;">
+        3 étapes : Observer → Discuter → Se mettre d'accord.<br>
+        Pas de jugements ni de mesures disciplinaires. Règle : 3 PP pour 1 AD/CD.
+      </p>
+      <div class="type-legend">
+        <div class="type-legend-item PP">
+          <span class="type-badge type-PP">PP</span>
+          <p><strong>Point Positif</strong><br>Bonne pratique observée, comportement exemplaire, respect des consignes.</p>
+        </div>
+        <div class="type-legend-item PA">
+          <span class="type-badge type-PA">PA</span>
+          <p><strong>Point d'Amélioration</strong><br>Situation améliorable sans danger immédiat.</p>
+        </div>
+        <div class="type-legend-item CD">
+          <span class="type-badge type-CD">CD</span>
+          <p><strong>Condition Dangereuse</strong><br>Consigne non à jour, balisage absent, matériel défectueux.</p>
+        </div>
+        <div class="type-legend-item AD">
+          <span class="type-badge type-AD">AD</span>
+          <p><strong>Acte Dangereux</strong><br>Téléphone en conduisant, travail sans EPI, non-respect procédure.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODE VOITURE (dictée mains libres) -->
+  <div class="vo-overlay" id="vo-overlay">
+    <button class="vo-close" id="vo-close" title="Quitter" onclick="voClose()">✕</button>
+    <div class="vo-title">🚗 Mode voiture — CR HSE</div>
+    <div class="vo-status" id="vo-status">Je t'écoute…</div>
+    <div class="vo-transcript" id="vo-transcript"></div>
+    <button class="vo-mic" id="vo-mic" onclick="voMicTap()">🎤</button>
+    <button class="vo-trier hidden" id="vo-trier" onclick="voTrierMaintenant()">✅ Trier mes observations</button>
+    <div class="vo-result hidden" id="vo-result"></div>
+    <div class="vo-hint">Dicte tes observations <b>librement</b>, les unes à la suite des autres — les pauses ne coupent rien, pas de mot magique à dire.<br>
+    Quand tu as tout dicté, dis « <b>Terminé</b> » (ou appuie sur le bouton vert) : l'IA découpe, trie en PP / PA / CD / AD, sépare les actions correctives et reformule proprement.<br>
+    « <b>Nouveau CR</b> chantier Canal de la Sambre » ouvre un 2ᵉ CR · « Annule le non-port des EPI… Terminé » supprime une ligne.<br>
+    Rien ne part au PA sans le bouton Sauvegarder. Un appui sur le micro = pause.</div>
+  </div>
+
+  <!-- TOAST -->
+  <div class="toast" id="toast"></div>
+
+  <script src="js/cr.js"></script>
+  <!-- VUE RAPPORT : générée à la volée pour l'export PDF / l'impression -->
+  <div id="print-view"></div>
+
+  <script src="js/rapport.js"></script>
+
+  <script src="js/demarrage.js"></script>
+</body>
+</html>
